@@ -1,0 +1,100 @@
+# --------------------------------------------------------------------------------
+# Basic experiment YML file of Image Denoising.
+#
+# Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
+# --------------------------------------------------------------------------------
+
+
+# general settings #####################################################################################################
+task_name: Denoising
+scale: 1
+num_in_ch: 3
+num_out_ch: 3
+task: denoising
+
+
+# dataset and data loader settings #####################################################################################
+datasets:
+  train:
+    name: SIDD_train
+    type: IRDataset
+    dataroot_gt: datasets/denoising_data/SIDD/train/gt_crops.lmdb
+    dataroot_lq: datasets/denoising_data/SIDD/train/input_crops.lmdb
+    filename_tmpl: '{}'
+    io_backend:
+      type: lmdb
+
+    use_hflip: false # !
+    use_rot: false # !
+
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 4
+    dataset_enlarge_ratio: 100
+    prefetch_mode: ~
+
+
+# val datasets #########################################################################################################
+  val:
+    name: SIDD_val_10
+    type: IRDataset
+    dataroot_gt: datasets/denoising_data/SIDD/val_10/gt_crops.lmdb
+    dataroot_lq: datasets/denoising_data/SIDD/val_10/input_crops.lmdb
+    io_backend:
+      type: lmdb
+
+
+# test datasets ########################################################################################################
+test_datasets:
+  test:
+    name: SIDD
+    type: IRDataset
+    dataroot_gt: datasets/denoising_data/SIDD/val/gt_crops.lmdb
+    dataroot_lq: datasets/denoising_data/SIDD/val/input_crops.lmdb
+    io_backend:
+      type: lmdb
+
+
+# analyse datasets #####################################################################################################
+analyse_datasets:
+  analyse_0:  # demo dataset
+    name: Demo_Set5
+    type: IRDataset
+    dataroot_gt: datasets/sr_data/Demo_Set5/HR/x4
+    dataroot_lq: datasets/sr_data/Demo_Set5/HR/x4
+    io_backend:
+      type: disk
+
+
+# infer datasets #######################################################################################################
+infer_datasets:
+  infer_1:  # demo dataset
+    name: Set5_GT
+    type: IRDataset
+    dataroot_gt: datasets/sr_data/Demo_Set5/HR/x4
+    io_backend:
+      type: disk
+
+
+# interpret imgs #######################################################################################################
+interpret_imgs:
+  img_1:
+    img_path: datasets/sr_data/Urban7/7.png
+    w: 110
+    h: 150
+
+
+# logging settings #####################################################################################################
+logger:
+  print_freq: 1000
+  save_checkpoint_freq: 1000
+  use_tb_logger: false
+  wandb:
+    project: ~
+    resume_id: ~
+
+
+# dist training settings ###############################################################################################
+dist_params:
+  backend: nccl
+  port: 4000

@@ -1,0 +1,74 @@
+# general settings #####################################################################################################
+name: NAFNet-Baseline-width32
+model_type: IRModel
+num_gpu: 1  # 0 for cpu mode
+manual_seed: 42
+bit: 0 # data type
+
+
+# network structure ####################################################################################################
+network_g:
+  type: NAFNetBaseline
+  width: 32
+  enc_blk_nums: [2, 2, 4, 8]
+  middle_blk_num: 12
+  dec_blk_nums: [2, 2, 2, 2]
+  dw_expand: 1
+  ffn_expand: 2
+
+
+# path #################################################################################################################
+path:
+  pretrain_network_g: modelzoo/NAFNet/NAFNet-Baseline-width32.pth
+  strict_load_g: true
+  resume_state: ~
+
+
+# training settings ####################################################################################################
+train:
+  # basic setting
+  gt_size: 256
+  batch_size_per_gpu: 64
+  total_iter: 400000 # 4,000,000 in paper
+
+  # optimizer setting
+  optim_g:
+    type: Adam # AdamW in code
+    lr: !!float 1e-3
+    weight_decay: 0
+    betas: [ 0.9, 0.999 ] # 0.9 in code
+
+  # scheduler setting
+  scheduler:
+    type: CosineAnnealingRestartLR
+    periods: [ 4000000 ] # 4,000,000 in paper
+    restart_weights: [ 1 ]
+    eta_min: !!float 1e-7 # 1e-6 in paper
+
+  #  scheduler:
+  #    type: MultiStepLR
+  #    milestones: [ 200000, 400000, 600000, 800000 ]
+  #    gamma: 0.5
+
+  # loss setting
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0
+    reduction: mean
+
+
+# validation settings ##################################################################################################
+val:
+  val_freq: 1000
+  save_img: false
+  suffix: ~
+
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: true
+    ssim:
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: true

@@ -1,0 +1,68 @@
+# general settings #####################################################################################################
+name: SAN
+model_type: IRModel
+num_gpu: 1  # 0 for cpu mode
+manual_seed: 42
+bit: 8 # data type
+
+
+# network structure ####################################################################################################
+network_g:
+  type: SAN
+
+
+# path #################################################################################################################
+path:
+  pretrain_network_g: ~
+  strict_load_g: true
+  resume_state: ~
+
+
+# training settings ####################################################################################################
+train:
+  # basic setting
+  gt_size: 256
+  batch_size_per_gpu: 64
+  total_iter: 1000000
+
+  # optimizer setting
+  optim_g:
+    type: Adam
+    lr: !!float 5e-4
+    weight_decay: 0
+    betas: [ 0.9, 0.999 ]
+
+  # scheduler setting
+  scheduler:
+    type: CosineAnnealingRestartLR
+    periods: [ 1000000 ]
+    restart_weights: [ 1 ]
+    eta_min: !!float 1e-6
+
+#  scheduler:
+#    type: MultiStepLR
+#    milestones: [ 200000, 400000, 600000, 800000 ]
+#    gamma: 0.5
+
+  # loss setting
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0
+    reduction: mean
+
+
+# validation settings ##################################################################################################
+val:
+  val_freq: 1000
+  save_img: false
+  suffix: ~
+
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: true
+    ssim:
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: true
