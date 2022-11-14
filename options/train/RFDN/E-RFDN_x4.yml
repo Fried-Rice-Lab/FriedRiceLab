@@ -1,0 +1,163 @@
+# general settings #####################################################################################################
+name: E-RFDN_x4
+model_type: SISRModel8Bit
+scale: 4
+num_gpu: 1  # 0 for cpu mode
+manual_seed: 42
+
+
+# dataset and data loader settings #####################################################################################
+datasets:
+  train:
+#    name: DIV2K_train_800_org
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/DIV2K/DIV2K_train_HR
+#    dataroot_lq: datasets/DIV2K/DIV2K_train_LR_bicubic/X4
+#    meta_info_file: datasets/meta_info/DIV2K_train_800_org.txt
+#    filename_tmpl: '{}x4'
+#    io_backend:
+#      type: disk
+
+#    name: DIV2K_train_800_sub
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/DIV2K/DIV2K_train_HR_sub
+#    dataroot_lq: datasets/DIV2K/DIV2K_train_LR_bicubic/X4_sub
+#    meta_info_file: datasets/meta_info/DIV2K_train_800_sub.txt
+#    filename_tmpl: '{}'
+#    io_backend:
+#      type: disk
+
+#    name: DIV2K_train_800_lmdb
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/DIV2K/DIV2K_train_HR_sub.lmdb
+#    dataroot_lq: datasets/DIV2K/DIV2K_train_LR_bicubic_X4_sub.lmdb
+#    meta_info_file: datasets/meta_info/DIV2K_train_800_lmdb.txt
+#    filename_tmpl: '{}'
+#    io_backend:
+#      type: lmdb
+
+#    name: DF2K_train_3450_org
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/DF2K/DF2K_train_HR
+#    dataroot_lq: datasets/DF2K/DF2K_train_LR_bicubic/X4
+#    meta_info_file: datasets/meta_info/DF2K_train_3450_org.txt
+#    filename_tmpl: '{}x4'
+#    io_backend:
+#      type: disk
+
+    name: DF2K_train_3450_sub
+    type: SISRDataset8Bit
+    dataroot_gt: datasets/DF2K/DF2K_train_HR_sub
+    dataroot_lq: datasets/DF2K/DF2K_train_LR_bicubic/X4_sub
+    meta_info_file: datasets/meta_info/DF2K_train_3450_sub.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+
+    gt_size: 256
+    use_hflip: true
+    use_rot: true
+
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 3
+    batch_size_per_gpu: 32
+    dataset_enlarge_ratio: 100
+    prefetch_mode: ~
+
+#  val_1:
+#    name: DIV2K_val_100
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/DIV2K/DIV2K_train_HR
+#    dataroot_lq: datasets/DIV2K/DIV2K_train_LR_bicubic/X4
+#    filename_tmpl: '{}x4'
+#    meta_info_file: datasets/meta_info/DIV2K_val_100_disk.txt
+#    io_backend:
+#      type: disk
+
+  val_2:
+    name: DIV2K_val_10
+    type: SISRDataset8Bit
+    dataroot_gt: datasets/DIV2K/DIV2K_train_HR
+    dataroot_lq: datasets/DIV2K/DIV2K_train_LR_bicubic/X4
+    filename_tmpl: '{}x4'
+    meta_info_file: datasets/meta_info/DIV2K_val_10_disk.txt
+    io_backend:
+      type: disk
+
+
+# network structures ###################################################################################################
+network_g:
+  type: ERFDN
+  upscale: 4
+  planes: 50
+  num_blocks: 4
+  distillation_rate: 0.5
+
+
+# path #################################################################################################################
+path:
+  pretrain_network_g: ~
+  strict_load_g: true
+  resume_state: ~
+
+
+# training settings ####################################################################################################
+train:
+  optim_g:
+    type: Adam
+    lr: !!float 1e-4
+    weight_decay: 0
+    betas: [ 0.9, 0.999 ]
+
+  scheduler:
+    type: MultiStepLR
+    milestones: [ 200000, 400000, 600000, 800000 ]
+    gamma: 0.5
+
+#  scheduler:
+#    type: CosineAnnealingRestartLR
+#    periods: [ 1000000 ]
+#    restart_weights: [ 1 ]
+#    eta_min: !!float 1e-7
+
+  total_iter: 1000000
+  warmup_iter: -1  # no warm up
+
+  # losses
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0
+    reduction: mean
+
+
+# validation settings ##################################################################################################
+val:
+  val_freq: 1000
+  save_img: false
+
+  metrics:
+    psnr: # metric name, can be arbitrary
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: true
+#    ssim:
+#      type: calculate_ssim
+#      crop_border: 4
+#      test_y_channel: true
+
+
+# logging settings #####################################################################################################
+logger:
+  print_freq: 1000
+  save_checkpoint_freq: 1000
+  use_tb_logger: true
+  wandb:
+    project: ~
+    resume_id: ~
+
+
+# dist training settings ###############################################################################################
+dist_params:
+  backend: nccl
+  port: 4000

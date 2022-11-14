@@ -1,0 +1,120 @@
+# general settings #####################################################################################################
+name: ELAN-light_x4
+model_type: SISRModel8Bit
+scale: 4
+num_gpu: 1  # 0 for cpu mode
+manual_seed: 42
+
+
+# dataset and data loader settings #####################################################################################
+datasets:
+  test_1:
+    name: Set5
+    type: SISRDataset8Bit
+    dataroot_gt: datasets/Set5/HR/x4
+    dataroot_lq: datasets/Set5/LRBI/x4
+    io_backend:
+      type: disk
+
+#  test_2:
+#    name: Set14
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/Set14/HR/x4
+#    dataroot_lq: datasets/Set14/LRBI/x4
+#    io_backend:
+#      type: disk
+#
+#  test_3:
+#    name: BSD100
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/BSD100/HR/x4
+#    dataroot_lq: datasets/BSD100/LRBI/x4
+#    io_backend:
+#      type: disk
+#
+#  test_4:
+#    name: Urban100
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/Urban100/HR/x4
+#    dataroot_lq: datasets/Urban100/LRBI/x4
+#    io_backend:
+#      type: disk
+#
+#  test_5:
+#    name: Manga109
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/Manga109/HR/x4
+#    dataroot_lq: datasets/Manga109/LRBI/x4
+#    io_backend:
+#      type: disk
+
+
+# analyse dataset ######################################################################################################
+analyse_datasets:
+  analyse_1:
+    name: Set5
+    type: SISRDataset8Bit
+    dataroot_gt: datasets/Set5/HR/x4
+    dataroot_lq: datasets/Set5/LRBI/x4
+    io_backend:
+      type: disk
+
+#  analyse_2:
+#    name: DIV2K_val_100
+#    type: SISRDataset8Bit
+#    dataroot_gt: datasets/DIV2K/DIV2K_train_HR
+#    dataroot_lq: datasets/DIV2K/DIV2K_train_LR_bicubic/X4
+#    filename_tmpl: '{}x4'
+#    meta_info_file: datasets/meta_info/DIV2K_val_100_disk.txt
+#    io_backend:
+#      type: disk
+
+
+# interpret img ########################################################################################################
+interpret_imgs:
+  img_1:
+    img_path: datasets/original_data/Urban7/7.png
+    w: 110
+    h: 150
+
+
+# infer dataset ########################################################################################################
+infer_datasets:
+  infer_1:
+    name: Set5_GT
+    type: SISRDataset8Bit
+    dataroot_gt: datasets/Set5/HR/x4
+    io_backend:
+      type: disk
+
+
+# network structures ###################################################################################################
+network_g:
+  type: ELAN
+  upscale: 4
+  planes: 60
+  window_sizes: !!python/tuple [4, 8, 16]
+  num_blocks: 24
+  n_share: 1
+
+
+# path #################################################################################################################
+path:
+  pretrain_network_g: ~
+  strict_load_g: true
+
+
+# validation settings ##################################################################################################
+val:
+  save_img: true
+  suffix: ~
+
+  metrics:
+    psnr:
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: true
+    ssim:
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: true
