@@ -46,7 +46,7 @@ def infer_pipeline(root_path):
 
     logger.info(
         f"Inference ended. The results are saved to "
-        f"{osp.join('experiments', opt['name'], 'visualization', 'inference')}.")
+        f"{osp.join('results', opt['name'], 'visualization', 'inference')}.")
 
 
 if __name__ == '__main__':
