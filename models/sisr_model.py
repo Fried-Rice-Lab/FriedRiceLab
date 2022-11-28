@@ -26,10 +26,59 @@ class SISRModel(SRModel):
     def __init__(self, opt) -> None:
         super(SISRModel, self).__init__(opt)
 
+    def test_selfensemble(self):
+        # TODO: to be tested
+        # 8 augmentations
+        # modified from https://github.com/thstkdgus35/EDSR-PyTorch
+
+        def _transform(v, op):
+            # if self.precision != 'single': v = v.float()
+            v2np = v.data.cpu().numpy()
+            if op == 'v':
+                tfnp = v2np[:, :, :, ::-1].copy()
+            elif op == 'h':
+                tfnp = v2np[:, :, ::-1, :].copy()
+            elif op == 't':
+                tfnp = v2np.transpose((0, 1, 3, 2)).copy()
+
+            ret = torch.Tensor(tfnp).to(self.device)
+            # if self.precision == 'half': ret = ret.half()
+
+            return ret
+
+        # prepare augmented data
+        lq_list = [self.lq]
+        for tf in 'v', 'h', 't':
+            lq_list.extend([_transform(t, tf) for t in lq_list])
+
+        # inference
+        if hasattr(self, 'net_g_ema'):
+            self.net_g_ema.eval()
+            with torch.no_grad():
+                out_list = [self.net_g_ema(aug) for aug in lq_list]
+        else:
+            self.net_g.eval()
+            with torch.no_grad():
+                out_list = [self.net_g(aug) for aug in lq_list]
+            self.net_g.train()
+
+        # merge results
+        for i in range(len(out_list)):
+            if i > 3:
+                out_list[i] = _transform(out_list[i], 't')
+            if i % 4 > 1:
+                out_list[i] = _transform(out_list[i], 'h')
+            if (i % 4) % 2 == 1:
+                out_list[i] = _transform(out_list[i], 'v')
+        output = torch.cat(out_list, dim=0)
+
+        self.output = output.mean(dim=0, keepdim=True)
+
     def nondist_validation(self, dataloader, current_iter, tb_logger, save_img):
         dataset_name = dataloader.dataset.opt['name']
         with_metrics = self.opt['val'].get('metrics') is not None
         use_pbar = self.opt['val'].get('pbar', False)
+        self_ensemble = self.opt['val'].get('self_ensemble', False)
 
         if with_metrics:
             if not hasattr(self, 'metric_results'):  # only execute in the first run
@@ -47,7 +96,7 @@ class SISRModel(SRModel):
         for idx, val_data in enumerate(dataloader):
             img_name = osp.splitext(osp.basename(val_data['lq_path'][0]))[0]
             self.feed_data(val_data)
-            self.test()
+            self.test_selfensemble() if self_ensemble else self.test()
 
             visuals = self.get_current_visuals()
             sr_img = tensor2img([visuals['result']])
@@ -146,10 +195,59 @@ class SISRModel8Bit(SRModel):
     def __init__(self, opt) -> None:
         super(SISRModel8Bit, self).__init__(opt)
 
+    def test_selfensemble(self):
+        # TODO: to be tested
+        # 8 augmentations
+        # modified from https://github.com/thstkdgus35/EDSR-PyTorch
+
+        def _transform(v, op):
+            # if self.precision != 'single': v = v.float()
+            v2np = v.data.cpu().numpy()
+            if op == 'v':
+                tfnp = v2np[:, :, :, ::-1].copy()
+            elif op == 'h':
+                tfnp = v2np[:, :, ::-1, :].copy()
+            elif op == 't':
+                tfnp = v2np.transpose((0, 1, 3, 2)).copy()
+
+            ret = torch.Tensor(tfnp).to(self.device)
+            # if self.precision == 'half': ret = ret.half()
+
+            return ret
+
+        # prepare augmented data
+        lq_list = [self.lq]
+        for tf in 'v', 'h', 't':
+            lq_list.extend([_transform(t, tf) for t in lq_list])
+
+        # inference
+        if hasattr(self, 'net_g_ema'):
+            self.net_g_ema.eval()
+            with torch.no_grad():
+                out_list = [self.net_g_ema(aug) for aug in lq_list]
+        else:
+            self.net_g.eval()
+            with torch.no_grad():
+                out_list = [self.net_g(aug) for aug in lq_list]
+            self.net_g.train()
+
+        # merge results
+        for i in range(len(out_list)):
+            if i > 3:
+                out_list[i] = _transform(out_list[i], 't')
+            if i % 4 > 1:
+                out_list[i] = _transform(out_list[i], 'h')
+            if (i % 4) % 2 == 1:
+                out_list[i] = _transform(out_list[i], 'v')
+        output = torch.cat(out_list, dim=0)
+
+        self.output = output.mean(dim=0, keepdim=True)
+
     def nondist_validation(self, dataloader, current_iter, tb_logger, save_img) -> None:
         dataset_name = dataloader.dataset.opt['name']
         with_metrics = self.opt['val'].get('metrics') is not None
         use_pbar = self.opt['val'].get('pbar', False)
+        self_ensemble = self.opt['val'].get('self_ensemble', False)
 
         if with_metrics:
             if not hasattr(self, 'metric_results'):  # only execute in the first run
@@ -167,7 +265,7 @@ class SISRModel8Bit(SRModel):
         for idx, val_data in enumerate(dataloader):
             img_name = osp.splitext(osp.basename(val_data['lq_path'][0]))[0]
             self.feed_data(val_data)
-            self.test()
+            self.test_selfensemble() if self_ensemble else self.test()
 
             visuals = self.get_current_visuals()
             # sr_img = tensor2img([visuals['result']])
