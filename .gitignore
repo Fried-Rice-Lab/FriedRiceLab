@@ -137,5 +137,8 @@ dmypy.json
 # vim
 *.swp
 
+# shell
+run.sh
+
 # for BasicSR
 results/
