@@ -2,7 +2,6 @@ import logging
 import os.path
 from os import path as osp
 
-import torch
 from basicsr.models import build_model
 from basicsr.utils import get_env_info, get_root_logger, get_time_str, make_exp_dirs
 from basicsr.utils.options import dict2str, parse_options
@@ -17,10 +16,6 @@ def interpret_pipeline(root_path):  # noqa
     # parse options, set distributed setting, set random seed
     opt, _ = parse_options(root_path, is_train=False)
 
-    torch.cuda.current_device()
-    torch.cuda.empty_cache()
-    torch.backends.cudnn.benchmark = False  # noqa
-
     # mkdir and initialize loggers
     make_exp_dirs(opt)
     log_file = osp.join(opt['path']['log'], f"interpret_{opt['name']}_{get_time_str()}.log")
@@ -34,7 +29,8 @@ def interpret_pipeline(root_path):  # noqa
     logger.info(f'Interpreting {model.net_g.__class__.__name__}...')
 
     for _, img_opt in sorted(opt['interpret_imgs'].items()):
-        img, di = get_model_interpretation(model.net_g, img_opt['img_path'], img_opt['w'], img_opt['h'])
+        img, di = get_model_interpretation(model.net_g, img_opt['img_path'], img_opt['w'], img_opt['h'],
+                                           use_cuda=True if opt['num_gpu'] > 0 else False)
         img.save(osp.join(opt['path']['visualization'], os.path.basename(img_opt['img_path'])))
         logger.info(f"DI of {os.path.basename(img_opt['img_path'])}: {round(di, 3)}")
 
