@@ -1,0 +1,14 @@
+*
+
+!.gitignore
+!README.md
+
+!/ELAN
+/ELAN/*
+!/ELAN/ELAN-demo.pth
+
+!/LAPAR
+/LAPAR/*
+!/LAPAR/kernel
+/LAPAR/kernel/*
+!/LAPAR/kernel/*.pkl
