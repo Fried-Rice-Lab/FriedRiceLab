@@ -1,144 +1,76 @@
 # ---------------------------------------------------------------------------
 # Efficient Long-Range Attention Network for Image Super-resolution
 # Official GitHub: https://github.com/xindongzhang/ELAN
+#
+# Modified by Tianle Liu (tianle.l@outlook.com)
 # ---------------------------------------------------------------------------
 import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as f
 from basicsr.utils.registry import ARCH_REGISTRY
 from einops import rearrange
 
-from archs.utils import Upsampler
-
-
-class MeanShift(nn.Conv2d):
-    def __init__(
-            self, rgb_range,
-            rgb_mean=(0.4488, 0.4371, 0.4040), rgb_std=(1.0, 1.0, 1.0), sign=-1):
-        super(MeanShift, self).__init__(3, 3, kernel_size=1)
-        std = torch.Tensor(rgb_std)
-        self.weight.data = torch.eye(3).view(3, 3, 1, 1) / std.view(3, 1, 1, 1)
-        self.bias.data = sign * rgb_range * torch.Tensor(rgb_mean) / std
-        for p in self.parameters():
-            p.requires_grad = False
-
-
-class ShiftConv2d0(nn.Module):
-    def __init__(self, inp_channels, out_channels):
-        super(ShiftConv2d0, self).__init__()
-        self.inp_channels = inp_channels
-        self.out_channels = out_channels
-        self.n_div = 5
-        g = inp_channels // self.n_div
-
-        conv3x3 = nn.Conv2d(inp_channels, out_channels, 3, 1, 1)
-        mask = nn.Parameter(torch.zeros((self.out_channels, self.inp_channels, 3, 3)), requires_grad=False)
-        mask[:, 0 * g:1 * g, 1, 2] = 1.0
-        mask[:, 1 * g:2 * g, 1, 0] = 1.0
-        mask[:, 2 * g:3 * g, 2, 1] = 1.0
-        mask[:, 3 * g:4 * g, 0, 1] = 1.0
-        mask[:, 4 * g:, 1, 1] = 1.0
-        self.w = conv3x3.weight
-        self.b = conv3x3.bias
-        self.m = mask
-
-    def forward(self, x):
-        y = F.conv2d(input=x, weight=self.w * self.m, bias=self.b, stride=1, padding=1)
-        return y
-
-
-class ShiftConv2d1(nn.Module):
-    def __init__(self, inp_channels, out_channels):
-        super(ShiftConv2d1, self).__init__()
-        self.inp_channels = inp_channels
-        self.out_channels = out_channels
-
-        self.weight = nn.Parameter(torch.zeros(inp_channels, 1, 3, 3), requires_grad=False)
-        self.n_div = 5
-        g = inp_channels // self.n_div
-        self.weight[0 * g:1 * g, 0, 1, 2] = 1.0  # left
-        self.weight[1 * g:2 * g, 0, 1, 0] = 1.0  # right
-        self.weight[2 * g:3 * g, 0, 2, 1] = 1.0  # up
-        self.weight[3 * g:4 * g, 0, 0, 1] = 1.0  # down
-        self.weight[4 * g:, 0, 1, 1] = 1.0  # identity
-
-        self.conv1x1 = nn.Conv2d(inp_channels, out_channels, 1)
-
-    def forward(self, x):
-        y = F.conv2d(input=x, weight=self.weight, bias=None, stride=1, padding=1, groups=self.inp_channels)
-        y = self.conv1x1(y)
-        return y
-
-
-class ShiftConv2d(nn.Module):
-    def __init__(self, inp_channels, out_channels, conv_type='fast-training-speed'):
-        super(ShiftConv2d, self).__init__()
-        self.inp_channels = inp_channels
-        self.out_channels = out_channels
-        self.conv_type = conv_type
-        if conv_type == 'low-training-memory':
-            self.shift_conv = ShiftConv2d0(inp_channels, out_channels)
-        elif conv_type == 'fast-training-speed':
-            self.shift_conv = ShiftConv2d1(inp_channels, out_channels)
-        else:
-            raise ValueError('invalid type of shift-conv2d')
-
-    def forward(self, x):
-        y = self.shift_conv(x)
-        return y
+from archs.utils import Conv2d1x1, Conv2d3x3, ShiftConv2d1x1, MeanShift, Upsampler
 
 
 class LFE(nn.Module):
-    def __init__(self, inp_channels, out_channels, exp_ratio=4, act_type='relu'):
+    r"""Local Feature Extraction.
+
+       Args:
+           planes: Number of input channels
+           r_expand: Channel expansion ratio
+           act_layer:
+
+       """
+
+    def __init__(self, planes: int, r_expand: int = 2,
+                 act_layer: nn.Module = nn.ReLU) -> None:
         super(LFE, self).__init__()
-        self.exp_ratio = exp_ratio
-        self.act_type = act_type
 
-        self.conv0 = ShiftConv2d(inp_channels, out_channels * exp_ratio)
-        self.conv1 = ShiftConv2d(out_channels * exp_ratio, out_channels)
+        self.lfe = nn.Sequential(ShiftConv2d1x1(planes, planes * r_expand),
+                                 act_layer(inplace=True),
+                                 ShiftConv2d1x1(planes * r_expand, planes))
 
-        if self.act_type == 'linear':
-            self.act = None
-        elif self.act_type == 'relu':
-            self.act = nn.ReLU(inplace=True)
-        elif self.act_type == 'gelu':
-            self.act = nn.GELU()
-        else:
-            raise ValueError('unsupport type of activation')
-
-    def forward(self, x):
-        y = self.conv0(x)
-        y = self.act(y)
-        y = self.conv1(y)
-        return y
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.lfe(x)
 
 
 class GMSA(nn.Module):
-    def __init__(self, channels, shifts=4, window_sizes=[4, 8, 12], calc_attn=True):
+    r"""Residual Feature Distillation Network.
+
+       Args:
+           planes: Number of input channels
+           shifts:
+           window_sizes: Window size
+           pass_attn:
+
+       """
+
+    def __init__(self, planes: int = 60, shifts: int = 0,
+                 window_sizes: tuple = (4, 8, 12), pass_attn: int = 0) -> None:
+
         super(GMSA, self).__init__()
-        self.channels = channels
         self.shifts = shifts
         self.window_sizes = window_sizes
-        self.calc_attn = calc_attn
 
-        if self.calc_attn:
-            self.split_chns = [channels * 2 // 3, channels * 2 // 3, channels * 2 // 3]
+        if pass_attn == 0:
+            self.split_chns = [planes * 2 // 3, planes * 2 // 3, planes * 2 // 3]
             self.project_inp = nn.Sequential(
-                nn.Conv2d(self.channels, self.channels * 2, kernel_size=1),
-                nn.BatchNorm2d(self.channels * 2)
+                Conv2d1x1(planes, planes * 2),
+                nn.BatchNorm2d(planes * 2)
             )
-            self.project_out = nn.Conv2d(channels, channels, kernel_size=1)
+            self.project_out = Conv2d1x1(planes, planes)
         else:
-            self.split_chns = [channels // 3, channels // 3, channels // 3]
+            self.split_chns = [planes // 3, planes // 3, planes // 3]
             self.project_inp = nn.Sequential(
-                nn.Conv2d(self.channels, self.channels, kernel_size=1),
-                nn.BatchNorm2d(self.channels)
+                Conv2d1x1(planes, planes),
+                nn.BatchNorm2d(planes)
             )
-            self.project_out = nn.Conv2d(channels, channels, kernel_size=1)
+            self.project_out = Conv2d1x1(planes, planes)
 
-    def forward(self, x, prev_atns=None):
+    def forward(self, x: torch.Tensor, prev_atns: list = None):
         b, c, h, w = x.shape
         x = self.project_inp(x)
         xs = torch.split(x, self.split_chns, dim=1)
@@ -191,98 +123,68 @@ class GMSA(nn.Module):
 
 
 class ELAB(nn.Module):
-    def __init__(self, inp_channels, out_channels, exp_ratio=2, shifts=0, window_sizes=[4, 8, 12], shared_depth=1):
+    r"""Residual Feature Distillation Network.
+
+       Args:
+           planes: Number of input channels
+           r_expand: Channel expansion ratio
+           shifts:
+           window_sizes: Window size
+           n_share: Depth of shared attention.
+
+       """
+
+    def __init__(self, planes: int = 60, r_expand: int = 2, shifts: int = 0,
+                 window_sizes: tuple = (4, 8, 12), n_share: int = 1) -> None:
         super(ELAB, self).__init__()
-        self.exp_ratio = exp_ratio
-        self.shifts = shifts
-        self.window_sizes = window_sizes
-        self.inp_channels = inp_channels
-        self.out_channels = out_channels
-        self.shared_depth = shared_depth
 
-        modules_lfe = {}
-        modules_gmsa = {}
-        modules_lfe['lfe_0'] = LFE(inp_channels=inp_channels, out_channels=out_channels, exp_ratio=exp_ratio)
-        modules_gmsa['gmsa_0'] = GMSA(channels=inp_channels, shifts=shifts, window_sizes=window_sizes, calc_attn=True)
-        for i in range(shared_depth):
-            modules_lfe['lfe_{}'.format(i + 1)] = LFE(inp_channels=inp_channels, out_channels=out_channels,
-                                                      exp_ratio=exp_ratio)
-            modules_gmsa['gmsa_{}'.format(i + 1)] = GMSA(channels=inp_channels, shifts=shifts,
-                                                         window_sizes=window_sizes, calc_attn=False)
-        self.modules_lfe = nn.ModuleDict(modules_lfe)
-        self.modules_gmsa = nn.ModuleDict(modules_gmsa)
+        self.modules_lfe = nn.ModuleList([LFE(planes=planes, r_expand=r_expand)
+                                          for _ in range(n_share + 1)])
+        self.modules_gmsa = nn.ModuleList([GMSA(planes=planes, shifts=shifts,
+                                                window_sizes=window_sizes, pass_attn=i)
+                                           for i in range(n_share + 1)])
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         atn = None
-        for i in range(1 + self.shared_depth):
-            if i == 0:  # only calculate attention for the 1-st module
-                x = self.modules_lfe['lfe_{}'.format(i)](x) + x
-                y, atn = self.modules_gmsa['gmsa_{}'.format(i)](x, None)
-                x = y + x
-            else:
-                x = self.modules_lfe['lfe_{}'.format(i)](x) + x
-                y, atn = self.modules_gmsa['gmsa_{}'.format(i)](x, atn)
-                x = y + x
+        for module1, module2 in zip(self.modules_lfe, self.modules_gmsa):
+            x = module1(x) + x
+            y, atn = module2(x, atn)
+            x = y + x
         return x
 
 
 @ARCH_REGISTRY.register()
 class ELAN(nn.Module):
+    r"""Residual Feature Distillation Network.
+
+       Args:
+           upscale:
+           planes: Number of input channels
+           num_blocks: Number of RFDB
+           window_sizes: Window size
+           n_share: Depth of shared attention
+           r_expand: Channel expansion ratio
+
+       """
+
     def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
-                 planes, window_sizes, num_blocks, n_share):
+                 planes: int = 60, num_blocks: int = 24,
+                 window_sizes: tuple = (4, 8, 12), n_share: int = 1, r_expand: int = 2) -> None:
         super(ELAN, self).__init__()
 
-        self.scale = upscale
         self.window_sizes = window_sizes
-        self.num_blocks = num_blocks
-        self.planes = planes
-        self.n_share = n_share
-        self.r_expand = 2
+        self.upscale = upscale
         self.sub_mean = MeanShift(255)
         self.add_mean = MeanShift(255, sign=1)
 
-        # define head module
-        m_head = [nn.Conv2d(num_in_ch, self.planes, kernel_size=3, stride=1, padding=1)]
+        self.head = Conv2d3x3(num_in_ch, planes)
 
-        # define body module
-        m_body = []
-        for i in range(self.num_blocks // (1 + self.n_share)):
-            if (i + 1) % 2 == 1:
-                m_body.append(
-                    ELAB(
-                        self.planes, self.planes, self.r_expand, 0,
-                        self.window_sizes, shared_depth=self.n_share
-                    )
-                )
-            else:
-                m_body.append(
-                    ELAB(
-                        self.planes, self.planes, self.r_expand, 1,
-                        self.window_sizes, shared_depth=self.n_share
-                    )
-                )
-        # define tail module
-        m_tail = [
-            Upsampler(upscale=upscale, in_channels=planes,
-                      out_channels=num_out_ch, upsample_mode=task)
-        ]
-
-        self.head = nn.Sequential(*m_head)
+        m_body = [ELAB(planes, r_expand, i % 2, window_sizes, n_share)
+                  for i in range(num_blocks // (1 + n_share))]
         self.body = nn.Sequential(*m_body)
-        self.tail = nn.Sequential(*m_tail)
 
-    def forward(self, x):
-        H, W = x.shape[2:]
-        x = self.check_image_size(x)
-
-        x = self.sub_mean(x)
-        x = self.head(x)
-        res = self.body(x)
-        res = res + x
-        x = self.tail(res)
-        x = self.add_mean(x)
-
-        return x[:, :, 0:H * self.scale, 0:W * self.scale]
+        self.tail = Upsampler(upscale=upscale, in_channels=planes,
+                              out_channels=num_out_ch, upsample_mode=task)
 
     def check_image_size(self, x):
         _, _, h, w = x.size()
@@ -291,8 +193,30 @@ class ELAN(nn.Module):
             wsize = wsize * self.window_sizes[i] // math.gcd(wsize, self.window_sizes[i])
         mod_pad_h = (wsize - h % wsize) % wsize
         mod_pad_w = (wsize - w % wsize) % wsize
-        x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h), 'reflect')
+        x = f.pad(x, (0, mod_pad_w, 0, mod_pad_h), 'reflect')
         return x
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        _, _, h, w = x.size()
+        x = self.check_image_size(x)
+
+        # reduce the mean of pixels
+        sub_x = self.sub_mean(x)
+
+        # head
+        head_x = self.head(sub_x)
+
+        # body
+        body_x = self.body(head_x)
+        body_x = body_x + head_x
+
+        # tail
+        tail_x = self.tail(body_x)
+
+        # add the mean of pixels
+        add_x = self.add_mean(tail_x)
+
+        return add_x[:, :, 0:h * self.upscale, 0:w * self.upscale]
 
 
 if __name__ == '__main__':
@@ -301,11 +225,11 @@ if __name__ == '__main__':
 
 
     # ELAN
-    net = ELAN(upscale=4, planes=180, window_sizes=[4, 8, 16], num_blocks=36, n_share=0)
+    net = ELAN(upscale=4, planes=180, window_sizes=(4, 8, 16), num_blocks=36, n_share=0)
     print(count_parameters(net))
 
     # ELAN-light
-    net = ELAN(upscale=4, planes=60, window_sizes=[4, 8, 16], num_blocks=24, n_share=1)
+    net = ELAN(upscale=4, planes=60, window_sizes=(4, 8, 16), num_blocks=24, n_share=1)
     print(count_parameters(net))
 
     data = torch.randn(1, 3, 120, 80)
