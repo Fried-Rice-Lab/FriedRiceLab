@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------
-# Basic Modules for Super Resolution Networks
+# Basic Modules for Image Restoration Networks
 #
 # Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
 # -------------------------------------------------------------------------------------
@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as f
 from einops import rearrange
 
-__all__ = ['SABase4D', 'SharedSABase4D']
+__all__ = ['SABase4D']
 
 
 class SABase4D(nn.Module):
@@ -107,162 +107,12 @@ class SABase4D(nn.Module):
         return output
 
 
-class SharedSABase4D(SABase4D):
-    r"""Shared self attention for 4D input.
-
-    Args:
-        dim: Number of input channels
-        attn_layer (list): layers used to calculate attn
-        proj_layer (list): layers used to proj output
-        window_list (tuple): list of window sizes. Input will be equally divided
-            by channel to use different windows sizes
-        shift_list (tuple): list of shift sizes
-        use_attn (bool): use the attn of the previous self-attentive layer
-
-    Returns:
-        b c h w -> b c h w
-    """
-
-    def __init__(self, dim: int,
-                 attn_layer: list = None,
-                 proj_layer: list = None,
-                 window_list: tuple = ((8, 8),),
-                 shift_list: tuple = None,
-                 use_attn: bool = False,
-                 ) -> None:
-        super(SharedSABase4D, self).__init__(dim, attn_layer, proj_layer, window_list, shift_list)
-
-        self.use_attn = use_attn
-
-    def forward(self, x: torch.Tensor, pre_attn_list: list = None) -> tuple:
-        r"""
-        Args:
-            x (torch.Tensor): b c h w
-            pre_attn_list (list):
-
-        Returns:
-            b c h w -> b c h w
-        """
-        # calculate qkv
-        qkv = self.qkv(x)
-        _, C, _, _ = qkv.size()
-
-        # split channels
-        qkv_list = torch.split(qkv, [C // self.num] * self.num, dim=1)
-
-        output_list = list()
-        attn_list = list()
-        for i, (attn_slice, window_size, shift_size) in enumerate(zip(qkv_list, self.window_list, self.shift_list)):
-            # check image size
-            _, _, h, w = attn_slice.size()
-            attn_slice = self.check_image_size(attn_slice, window_size)  # b c h w -> b c H W
-
-            # roooll!
-            if shift_size != (0, 0):
-                attn_slice = torch.roll(attn_slice, shifts=shift_size, dims=(2, 3))
-
-            # cal attn
-            _, _, h, w = attn_slice.size()
-            if not self.use_attn:
-                q, v = rearrange(attn_slice, 'b (qv c) (nh ws1) (nw ws2) -> qv (b nh nw) (ws1 ws2) c',
-                                 qv=2, ws1=window_size[0], ws2=window_size[1])
-                attn = (q @ q.transpose(-2, -1))
-                attn = f.softmax(attn, dim=-1)
-            else:
-                v = rearrange(attn_slice, 'b c (nh ws1) (nw ws2) -> (b nh nw) (ws1 ws2) c',
-                              ws1=window_size[0], ws2=window_size[1])
-                attn = pre_attn_list[i]
-            output = rearrange(attn @ v, '(b nh nw) (ws1 ws2) c -> b c (nh ws1) (nw ws2)',
-                               nh=h // window_size[0], nw=w // window_size[1],
-                               ws1=window_size[0], ws2=window_size[1])
-
-            # roooll back!
-            if shift_size != (0, 0):
-                output = torch.roll(output, shifts=(-shift_size[0], -shift_size[1]), dims=(2, 3))
-
-            output_list.append(output[:, :, :h, :w])
-            attn_list.append(attn)
-
-        # proj output
-        output = self.proj(torch.cat(output_list, dim=1))
-        return output, attn_list
-
-
 if __name__ == '__main__':
-    class Attention(SABase4D):
-        def __init__(self, dim: int,
-                     attn_layer: list = None,
-                     proj_layer: list = None,
-                     window_list: tuple = ((2, 2),),
-                     window_edge: tuple = (0,),
-                     shift_list: tuple = None,
-                     ) -> None:
-            super(Attention, self).__init__(dim, attn_layer, proj_layer, window_list, shift_list)
-
-            self.window_edge = window_edge
-
-        @staticmethod
-        def check_image_size(x: torch.Tensor, window_size: tuple, window_edge: int) -> torch.Tensor:
-            _, _, h, w = x.size()
-            windows_num_h = math.ceil(h / window_size[0])
-            windows_num_w = math.ceil(w / window_size[1])
-            mod_pad_h = windows_num_h * window_size[0] - h
-            mod_pad_w = windows_num_w * window_size[1] - w
-            return f.pad(x, (window_edge, mod_pad_w + window_edge,
-                             window_edge, mod_pad_h + window_edge))
-
-        def unfold(self, x: torch.Tensor, window_size: tuple, window_edge: int) -> torch.Tensor:
-            x = f.unfold(input=x,
-                         kernel_size=(window_size[0] + 2 * window_edge, window_size[1] + 2 * window_edge),
-                         dilation=(1, 1), padding=(0, 0), stride=window_size)
-            x = rearrange(x, 'b (c ws1 ws2) n -> (b n) (ws1 ws2) c',
-                          ws1=window_size[0] + 2 * window_edge, ws2=window_size[1] + 2 * window_edge)
-            return x
-
-        def fold(self, x: torch.Tensor, img_size: tuple, window_size: tuple, window_edge: int, b: int) -> torch.Tensor:
-            x = rearrange(x, '(b n) (ws1 ws2) c -> b (c ws1 ws2) n',
-                          b=b, ws1=window_size[0] + 2 * window_edge, ws2=window_size[1] + 2 * window_edge)
-            x = f.fold(input=x, output_size=img_size,
-                       kernel_size=(window_size[0] + 2 * window_edge, window_size[1] + 2 * window_edge),
-                       dilation=(1, 1), padding=(0, 0), stride=window_size)
-            return x
-
-        def forward(self, x: torch.Tensor):
-            b, c, h, w = x.size()
-
-            # calculate qkv
-            qkv = self.qkv(x)
-            _, C, _, _ = qkv.size()
-
-            # split channels
-            qkv_list = torch.split(qkv, [C // self.num] * self.num, dim=1)
-
-            output_list = list()
-            for qkv_slice, w_s, w_e, s_s in zip(qkv_list, self.window_list, self.window_edge, self.shift_list):
-                # check image size
-                qkv_slice = self.check_image_size(qkv_slice, w_s, w_e)
-                _, _, H, W = qkv_slice.size()
-
-                qkv_slice = self.unfold(qkv_slice, w_s, w_e)
-
-                q, v = rearrange(qkv_slice, 'b l (qv c) -> qv b l c', qv=2)
-                attn = (q @ q.transpose(-2, -1))
-                attn = f.softmax(attn, dim=-1)
-                output = attn @ v
-
-                output = self.fold(output, (H, W), w_s, w_e, b)
-                output_list.append(output[:, :, :h, :w])
-
-            # proj output
-            output = torch.cat(output_list, dim=1)
-            return output
-
-
     dim = 11
     data = torch.randn(1, dim, 16, 16)
-    layer = Attention(dim=dim,
-                      attn_layer=[nn.Conv2d(dim, dim * 2, 1), nn.BatchNorm2d(dim * 2)],
-                      proj_layer=[nn.Conv2d(dim, dim, 1)],
-                      window_list=((8, 8),),
-                      window_edge=(0,))
+    layer = SABase4D(dim=dim,
+                     num_heads=1,
+                     attn_layer=[nn.Conv2d(dim, dim * 2, 1), nn.BatchNorm2d(dim * 2)],
+                     proj_layer=[nn.Conv2d(dim, dim, 1)],
+                     window_list=((8, 8),))
     print(layer(data) == data)

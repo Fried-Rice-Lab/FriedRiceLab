@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------
-# Basic Modules for Super Resolution Networks
+# Basic Modules for Image Restoration Networks
 #
 # Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
 # -------------------------------------------------------------------------------------
@@ -11,8 +11,7 @@ from ._conv import Conv2d3x3
 
 
 class Upsampler(nn.Sequential):
-    r"""Tail of the super-resolution network. Supports both "classical" and
-        "lightweight" modes.
+    r"""Tail of the image restoration network.
 
     Args:
         upscale (int):
@@ -23,10 +22,10 @@ class Upsampler(nn.Sequential):
     """
 
     def __init__(self, upscale: int, in_channels: int,
-                 out_channels: int, upsample_mode: str = 'c') -> None:
+                 out_channels: int, upsample_mode: str = 'csr') -> None:
 
         layer_list = list()
-        if upsample_mode == 'c':  # classical
+        if upsample_mode == 'csr':  # classical
             if (upscale & (upscale - 1)) == 0:  # 2^n?
                 for _ in range(int(math.log(upscale, 2))):
                     layer_list.append(Conv2d3x3(in_channels, 4 * in_channels))
@@ -37,9 +36,11 @@ class Upsampler(nn.Sequential):
             else:
                 raise ValueError(f'Upscale {upscale} is not supported.')
             layer_list.append(Conv2d3x3(in_channels, out_channels))
-        elif upsample_mode == 'l':  # lightweight
+        elif upsample_mode == 'lsr':  # lightweight
             layer_list.append(Conv2d3x3(in_channels, out_channels * (upscale ** 2)))
             layer_list.append(nn.PixelShuffle(upscale))
+        elif upsample_mode == 'denoising' or upsample_mode == 'deblurring' or upsample_mode == 'deraining':
+            layer_list.append(Conv2d3x3(in_channels, out_channels))
         else:
             raise ValueError(f'Upscale mode {upscale} is not supported.')
 

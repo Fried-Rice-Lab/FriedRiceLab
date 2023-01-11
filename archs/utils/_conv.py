@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------
-# Basic Modules for Super Resolution Networks
+# Basic Modules for Image Restoration Networks
 #
 # Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
 # -------------------------------------------------------------------------------------
@@ -11,7 +11,7 @@ from ._linear import GroupLinear
 
 __all__ = ['Conv2d1x1', 'Conv2d3x3', 'ContextGatedConv2d',
            'ShiftConv2d1x1', 'MeanShift', 'AffineConv2d1x1',
-           'PixelMixer', 'DepthwiseSeparableConv2d']
+           'DepthwiseSeparableConv2d']
 
 
 class Conv2d1x1(nn.Conv2d):
@@ -226,72 +226,7 @@ class AffineConv2d1x1(nn.Conv2d):
         return x * self.weight + self.bias
 
 
-class PixelMixer(nn.Module):
-    r"""Mixing pixels with their surrounding pixels.
-
-    Args:
-        planes (int):
-        mix_margin (int):
-        mix_mode (str):
-
-    Warnings:
-        The padding operation may result in incorrect edge textures
-        when using a larger mix_margin.
-
-    """
-
-    def __init__(self, planes: int, mix_margin: int = 1, mix_mode: str = '+') -> None:
-        super(PixelMixer, self).__init__()
-
-        assert planes % 5 == 0
-
-        self.planes = planes
-        self.mix_margin = mix_margin
-        self.mix_mode = mix_mode
-
-        self.mask = nn.Parameter(torch.zeros((self.planes, 1, 3, 3)), requires_grad=False)
-        if mix_mode == '+':
-            self.mask[0::5, 0, 1, 2] = 1.
-            self.mask[1::5, 0, 1, 0] = 1.
-            self.mask[2::5, 0, 2, 1] = 1.
-            self.mask[3::5, 0, 0, 1] = 1.
-            self.mask[4::5, 0, 1, 1] = 1.
-        elif mix_mode == 'x':
-            self.mask[0::5, 0, 0, 0] = 1.
-            self.mask[1::5, 0, 0, 2] = 1.
-            self.mask[2::5, 0, 2, 0] = 1.
-            self.mask[3::5, 0, 2, 2] = 1.
-            self.mask[4::5, 0, 1, 1] = 1.
-        elif mix_mode == '+x':
-            self.mask[0:1:10, 0, 1, 2] = 1.
-            self.mask[1:2:10, 0, 1, 0] = 1.
-            self.mask[2:3:10, 0, 2, 1] = 1.
-            self.mask[3:4:10, 0, 0, 1] = 1.
-            self.mask[4:5:10, 0, 1, 1] = 1.
-            self.mask[5:6:10, 0, 0, 0] = 1.
-            self.mask[6:7:10, 0, 0, 2] = 1.
-            self.mask[7:8:10, 0, 2, 0] = 1.
-            self.mask[8:9:10, 0, 2, 2] = 1.
-            self.mask[9:10:10, 0, 1, 1] = 1.
-        else:
-            raise NotImplementedError(f"Unknown mix mode for PixelShift: {mix_mode}.")
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x: b c h w
-
-        Returns:
-            b c h w -> b c h w
-        """
-        m = self.mix_margin
-        x = f.conv2d(input=f.pad(x, pad=(m, m, m, m), mode='circular'),
-                     weight=self.mask, bias=None, stride=(1, 1), padding=(0, 0),
-                     dilation=(m, m), groups=self.planes)
-        return x
-
-
-class DepthwiseSeparableConv2d(nn.Module):  # TODO nn.Conv2d
+class DepthwiseSeparableConv2d(nn.Module):
     r"""
 
     Args:

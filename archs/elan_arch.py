@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------
+# Efficient Long-Range Attention Network for Image Super-resolution
+# Official GitHub: https://github.com/xindongzhang/ELAN
+# ---------------------------------------------------------------------------
 import math
 
 import torch
@@ -5,6 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from basicsr.utils.registry import ARCH_REGISTRY
 from einops import rearrange
+
+from archs.utils import Upsampler
 
 
 class MeanShift(nn.Conv2d):
@@ -222,7 +228,8 @@ class ELAB(nn.Module):
 
 @ARCH_REGISTRY.register()
 class ELAN(nn.Module):
-    def __init__(self, upscale, planes, window_sizes, num_blocks, n_share):
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes, window_sizes, num_blocks, n_share):
         super(ELAN, self).__init__()
 
         self.scale = upscale
@@ -235,7 +242,7 @@ class ELAN(nn.Module):
         self.add_mean = MeanShift(255, sign=1)
 
         # define head module
-        m_head = [nn.Conv2d(3, self.planes, kernel_size=3, stride=1, padding=1)]
+        m_head = [nn.Conv2d(num_in_ch, self.planes, kernel_size=3, stride=1, padding=1)]
 
         # define body module
         m_body = []
@@ -256,8 +263,8 @@ class ELAN(nn.Module):
                 )
         # define tail module
         m_tail = [
-            nn.Conv2d(self.planes, 3 * self.scale * self.scale, kernel_size=3, stride=1, padding=1),
-            nn.PixelShuffle(self.scale)
+            Upsampler(upscale=upscale, in_channels=planes,
+                      out_channels=num_out_ch, upsample_mode=task)
         ]
 
         self.head = nn.Sequential(*m_head)

@@ -4,12 +4,13 @@ from os import path as osp
 
 from basicsr.models import build_model
 from basicsr.utils import get_env_info, get_root_logger, get_time_str, make_exp_dirs
-from basicsr.utils.options import dict2str, parse_options
+from basicsr.utils.options import dict2str
 
 import archs  # noqa
 import data  # noqa
 import models  # noqa
 from tools.interpret_tool import get_model_interpretation
+from utils import parse_options
 
 
 def interpret_pipeline(root_path):  # noqa

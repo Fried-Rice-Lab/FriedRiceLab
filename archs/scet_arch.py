@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------
+# Self-Calibrated Efficient Transformer for Lightweight Super-Resolution
+# Official GitHub: https://github.com/AlexZou14/SCET
+# ---------------------------------------------------------------------------
 import numbers
 
 import torch
@@ -215,10 +219,11 @@ class SCPA(nn.Module):
 
 
 @ARCH_REGISTRY.register()
-class SCET(nn.Module):  # TODO Optimize the implementation
-    def __init__(self, upscale=4, planes=64):
+class SCET(nn.Module):
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes=64):
         super().__init__()
-        self.conv3 = nn.Conv2d(3, planes,
+        self.conv3 = nn.Conv2d(num_in_ch, planes,
                                kernel_size=3, padding=1)
 
         lamRes = torch.nn.Parameter(torch.ones(1))

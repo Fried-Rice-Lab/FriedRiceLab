@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 import torch
 import torch.nn as nn
-from basicsr.utils.registry import ARCH_REGISTRY  # noqa
+from basicsr.utils.registry import ARCH_REGISTRY
 
 from archs.utils import Conv2d1x1, Conv2d3x3, Upsampler
 
@@ -102,8 +102,8 @@ class RIR(nn.Module):
         return x + self.conv(self.rir(x))
 
 
-# @ARCH_REGISTRY.register()
-class RCAN(nn.Module):
+@ARCH_REGISTRY.register()
+class _RCAN(nn.Module):
     r"""Residual Channel Attention Network.
 
         Args:
@@ -114,17 +114,17 @@ class RCAN(nn.Module):
 
         """
 
-    def __init__(self, upscale: int = 4, planes: int = 64,
-                 num_groups: int = 10, num_blocks: int = 20) -> None:
-        super(RCAN, self).__init__()
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes: int = 64, num_groups: int = 10, num_blocks: int = 20) -> None:
+        super(_RCAN, self).__init__()
 
-        self.head = nn.Sequential(Conv2d3x3(3, planes))
+        self.head = nn.Sequential(Conv2d3x3(num_in_ch, planes))
 
         self.body = nn.Sequential(RIR(planes, num_groups, num_blocks))
 
         self.tail = nn.Sequential(Upsampler(upscale=upscale, in_channels=planes,
-                                            out_channels=planes, upsample_mode='c'),
-                                  Conv2d3x3(planes, 3))
+                                            out_channels=planes, upsample_mode=task),
+                                  Conv2d3x3(planes, num_out_ch))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # head
@@ -142,9 +142,8 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
-    net = RCAN(upscale=4, planes=64, num_groups=10, num_blocks=20)
-    print(count_parameters(net))
+    # net = _RCAN(upscale=4, planes=64, num_groups=10, num_blocks=20)
+    # print(count_parameters(net))
 
     # data = torch.randn(1, 3, 120, 80)
     # print(net(data).size())

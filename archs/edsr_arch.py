@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 import torch
 import torch.nn as nn
-from basicsr.utils.registry import ARCH_REGISTRY  # noqa
+from basicsr.utils.registry import ARCH_REGISTRY
 
 from archs.utils import Conv2d3x3, Upsampler
 
@@ -34,30 +34,23 @@ class ResBlock(nn.Module):
         return x + self.body(x) * self.res_scale
 
 
-# @ARCH_REGISTRY.register()
-class EDSR(nn.Module):
+@ARCH_REGISTRY.register()
+class _EDSR(nn.Module):
     r"""Enhanced Deep Residual Network.
-
-    Args:
-        upscale:
-        planes: Number of input channels
-        n_blocks: Number of ResBlock
-        act_layer:
-
     """
 
-    def __init__(self, upscale: int = 4, planes: int = 256, n_blocks: int = 32,
-                 act_layer: nn.Module = nn.ReLU):
-        super(EDSR, self).__init__()
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes: int = 256, n_blocks: int = 32, act_layer: nn.Module = nn.ReLU):
+        super(_EDSR, self).__init__()
 
-        modules_head = [Conv2d3x3(3, planes)]
+        modules_head = [Conv2d3x3(num_in_ch, planes)]
         self.head = nn.Sequential(*modules_head)
 
         modules_body = [ResBlock(planes, act_layer=act_layer) for _ in range(n_blocks)]
         self.body = nn.Sequential(*modules_body)
 
         self.tail = nn.Sequential(Upsampler(upscale=upscale, in_channels=planes,
-                                            out_channels=planes, upsample_mode='c'),
+                                            out_channels=planes, upsample_mode=task),
                                   Conv2d3x3(planes, 3))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -78,6 +71,5 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
-    net = EDSR(upscale=4, planes=64, n_blocks=16)
-    print(count_parameters(net))
+    # net = EDSR(upscale=4, planes=64, n_blocks=16)
+    # print(count_parameters(net))

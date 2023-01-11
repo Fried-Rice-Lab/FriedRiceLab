@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, CCA
+from archs.utils import Conv2d1x1, Conv2d3x3, CCA, Upsampler
 
 
 class IMDB(nn.Module):
@@ -50,10 +50,11 @@ class IMDN(nn.Module):
     r"""Information Multi-Distillation Network.
     """
 
-    def __init__(self, upscale: int, planes: int, num_modules: int) -> None:
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes: int, num_modules: int) -> None:
         super(IMDN, self).__init__()
 
-        self.head = Conv2d3x3(3, planes)
+        self.head = Conv2d3x3(num_in_ch, planes)
 
         self.body = nn.ModuleList([IMDB(in_channels=planes) for _ in range(num_modules)])
 
@@ -61,8 +62,8 @@ class IMDN(nn.Module):
                                        nn.LeakyReLU(negative_slope=0.05, inplace=True),
                                        Conv2d3x3(planes, planes))
 
-        self.tail = nn.Sequential(Conv2d3x3(planes, 3 * (upscale ** 2)),
-                                  nn.PixelShuffle(upscale))
+        self.tail = Upsampler(upscale=upscale, in_channels=planes,
+                              out_channels=num_out_ch, upsample_mode=task)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # head

@@ -1,0 +1,243 @@
+# --------------------------------------------------------------------------------
+# Basic experiment YML file of Classical Super-Resolution.
+#
+# Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
+# --------------------------------------------------------------------------------
+
+
+# general settings #####################################################################################################
+task_name: CSR_x3
+scale: 3
+num_in_ch: 3
+num_out_ch: 3
+task: csr
+
+
+# dataset and data loader settings #####################################################################################
+datasets:
+#  train:
+#    name: DIV2K_train_800_org
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/DIV2K/DIV2K_train_HR
+#    dataroot_lq: datasets/sr_data/DIV2K/DIV2K_train_LR_bicubic/X3
+#    meta_info_file: datasets/meta_info/DIV2K_train_800_org.txt
+#    filename_tmpl: '{}x3'
+#    io_backend:
+#      type: disk
+
+#  train:
+#    name: DIV2K_train_800_sub
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/DIV2K/DIV2K_train_HR_sub
+#    dataroot_lq: datasets/sr_data/DIV2K/DIV2K_train_LR_bicubic/X3_sub
+#    meta_info_file: datasets/meta_info/DIV2K_train_800_sub.txt
+#    filename_tmpl: '{}'
+#    io_backend:
+#      type: disk
+
+#  train:
+#    name: DIV2K_train_800_lmdb
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/DIV2K/DIV2K_train_HR_sub.lmdb
+#    dataroot_lq: datasets/sr_data/DIV2K/DIV2K_train_LR_bicubic_X3_sub.lmdb
+#    meta_info_file: datasets/meta_info/DIV2K_train_800_lmdb.txt
+#    filename_tmpl: '{}'
+#    io_backend:
+#      type: lmdb
+
+#  train:
+#    name: DF2K_train_3450_org
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/DF2K/DF2K_train_HR
+#    dataroot_lq: datasets/sr_data/DF2K/DF2K_train_LR_bicubic/X3
+#    meta_info_file: datasets/meta_info/DF2K_train_3450_org.txt
+#    filename_tmpl: '{}x3'
+#    io_backend:
+#      type: disk
+
+  train:
+    name: DF2K_train_3450_sub
+    type: IRDataset
+    dataroot_gt: datasets/sr_data/DF2K/DF2K_train_HR_sub
+    dataroot_lq: datasets/sr_data/DF2K/DF2K_train_LR_bicubic/X3_sub
+    meta_info_file: datasets/meta_info/DF2K_train_3450_sub.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+
+    use_hflip: true
+    use_rot: true
+
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 4
+    dataset_enlarge_ratio: 100
+    prefetch_mode: ~
+
+
+# val datasets #########################################################################################################
+  val_1:
+    name: DIV2K_val_10
+    type: IRDataset
+    dataroot_gt: datasets/sr_data/DIV2K/DIV2K_train_HR
+    dataroot_lq: datasets/sr_data/DIV2K/DIV2K_train_LR_bicubic/X3
+    filename_tmpl: '{}x3'
+    meta_info_file: datasets/meta_info/DIV2K_val_10_disk.txt
+    io_backend:
+      type: disk
+
+#  val_2:
+#    name: DIV2K_val_100
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/DIV2K/DIV2K_train_HR
+#    dataroot_lq: datasets/sr_data/DIV2K/DIV2K_train_LR_bicubic/X3
+#    filename_tmpl: '{}x3'
+#    meta_info_file: datasets/meta_info/DIV2K_val_100_disk.txt
+#    io_backend:
+#      type: disk
+
+
+# test datasets ########################################################################################################
+test_datasets:
+  test_0:  # demo dataset
+    name: Demo_Set5
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x3
+    dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x3
+    io_backend:
+      type: disk
+
+#  test_1:
+#    name: Set5
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/Set5/HR/x3
+#    dataroot_lq: datasets/sr_data/Set5/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  test_2:
+#    name: Set14
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/Set14/HR/x3
+#    dataroot_lq: datasets/sr_data/Set14/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  test_3:
+#    name: BSD100
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/BSD100/HR/x3
+#    dataroot_lq: datasets/sr_data/BSD100/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  test_4:
+#    name: Urban100
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/Urban100/HR/x3
+#    dataroot_lq: datasets/sr_data/Urban100/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  test_5:
+#    name: Manga109
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/Manga109/HR/x3
+#    dataroot_lq: datasets/sr_data/Manga109/LRBI/x3
+#    io_backend:
+#      type: disk
+
+
+# analyse datasets #####################################################################################################
+analyse_datasets:
+  analyse_0:  # demo dataset
+    name: Demo_Set5
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x3
+    dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x3
+    io_backend:
+      type: disk
+
+#  analyse_1:
+#    name: Set5
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/Set5/HR/x3
+#    dataroot_lq: datasets/sr_data/Set5/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  analyse_2:
+#    name: Set14
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/Set14/HR/x3
+#    dataroot_lq: datasets/sr_data/Set14/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  analyse_3:
+#    name: BSD100
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/BSD100/HR/x3
+#    dataroot_lq: datasets/sr_data/BSD100/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  analyse_4:
+#    name: Urban100
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/Urban100/HR/x3
+#    dataroot_lq: datasets/sr_data/Urban100/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  analyse_5:
+#    name: Manga109
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/Manga109/HR/x3
+#    dataroot_lq: datasets/sr_data/Manga109/LRBI/x3
+#    io_backend:
+#      type: disk
+
+#  analyse_6:
+#    name: DIV2K_val_100
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/DIV2K/DIV2K_train_HR
+#    dataroot_lq: datasets/sr_data/DIV2K/DIV2K_train_LR_bicubic/X3
+#    filename_tmpl: '{}x3'
+#    meta_info_file: datasets/meta_info/DIV2K_val_100_disk.txt
+#    io_backend:
+#      type: disk
+
+
+# infer datasets #######################################################################################################
+infer_datasets:
+  infer_1:  # demo dataset
+    name: Set5_GT
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x3
+    io_backend:
+      type: disk
+
+
+# interpret imgs #######################################################################################################
+interpret_imgs:
+  img_1:
+    img_path: datasets/demo_data/Urban7/7.png
+    w: 110
+    h: 150
+
+
+# logging settings #####################################################################################################
+logger:
+  print_freq: 1000
+  save_checkpoint_freq: 1000
+  use_tb_logger: false
+  wandb:
+    project: ~
+    resume_id: ~
+
+
+# dist training settings ###############################################################################################
+dist_params:
+  backend: nccl
+  port: 4000

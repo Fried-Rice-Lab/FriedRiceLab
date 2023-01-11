@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------
-# Basic Modules for Super Resolution Networks
+# Basic Modules for Image Restoration Networks
 #
 # Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
 # -------------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ class DepthwiseSeparablePixelAttention(nn.Module):
                            dilation=(1, 1), groups=1, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x * torch.sigmoid(self.C(self.HW(x)))  # TODO 顺序问题
+        return x * torch.sigmoid(self.C(self.HW(x)))
 
 
 class AFEB(nn.Module):

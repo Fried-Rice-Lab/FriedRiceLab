@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, ESA
+from archs.utils import Conv2d1x1, Conv2d3x3, ESA, Upsampler
 
 
 class RLFB(nn.Module):
@@ -46,16 +46,17 @@ class RLFN(nn.Module):
 
     """
 
-    def __init__(self, upscale: int, planes: int, num_blocks: int = 6):
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes: int, num_blocks: int = 6):
         super(RLFN, self).__init__()
 
-        self.head = Conv2d3x3(3, planes)
+        self.head = Conv2d3x3(num_in_ch, planes)
 
         self.body = nn.Sequential(*[RLFB(planes) for _ in range(num_blocks)],
                                   Conv2d3x3(planes, planes))
 
-        self.tail = nn.Sequential(Conv2d3x3(planes, 3 * (upscale ** 2)),
-                                  nn.PixelShuffle(upscale))
+        self.tail = Upsampler(upscale=upscale, in_channels=planes,
+                              out_channels=num_out_ch, upsample_mode=task)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # head
@@ -75,9 +76,8 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+    # net = RLFN(upscale=4, planes=52)
+    # print(count_parameters(net))
 
-    net = RLFN(upscale=4, planes=52)
-    print(count_parameters(net))
-
-    data = torch.randn((1, 3, 64, 64))
-    print(net(data).size())
+    # data = torch.randn((1, 3, 64, 64))
+    # print(net(data).size())

@@ -1,3 +1,7 @@
+# ------------------------------------------------------------------------------------------
+# Feature Distillation Interaction Weighting Network for Lightweight Image Super-Resolution
+# Official GitHub: https://github.com/24wenjie-li/FDIWN
+# ------------------------------------------------------------------------------------------
 import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
@@ -390,7 +394,8 @@ class Li(nn.Module):
 
 @ARCH_REGISTRY.register()
 class FDIWN(nn.Module):
-    def __init__(self, upscale, planes, conv=default_conv):
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes, conv=default_conv):
         super().__init__()
 
         self.act = activation('lrelu', neg_slope=0.05)
@@ -402,7 +407,7 @@ class FDIWN(nn.Module):
         self.Sub_mean = MeanShift(255, rgb_mean, rgb_std)
         self.Add_mean = MeanShift(255, rgb_mean, rgb_std, 1)
 
-        self.head = conv(3, 3 * planes // 8, 3)
+        self.head = conv(num_in_ch, 3 * planes // 8, 3)
         self.Li1 = Li(3 * planes // 8)
         self.Li2 = Li(3 * planes // 8)
         self.Li3 = Li(3 * planes // 8)
@@ -415,7 +420,8 @@ class FDIWN(nn.Module):
 
         self.conv2 = conv(3, 8 * planes // 16, 3)
         up_body = list()
-        up_body.append(default_conv(8 * planes // 16, 3 * (upscale ** 2), kernel_size=3, bias=True))
+        up_body.append(default_conv(8 * planes // 16, num_out_ch * (upscale ** 2),
+                                    kernel_size=3, bias=True))
         up_body.append(nn.PixelShuffle(upscale))
         self.UP2 = nn.Sequential(*up_body)
 

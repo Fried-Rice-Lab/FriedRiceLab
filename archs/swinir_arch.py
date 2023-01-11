@@ -1,3 +1,7 @@
+# ------------------------------------------------------------
+# SwinIR: Image Restoration Using Swin Transformer
+# Official GitHub: https://github.com/JingyunLiang/SwinIR
+# ------------------------------------------------------------
 import math
 
 import torch
@@ -641,12 +645,13 @@ class _SwinIR(nn.Module):
         resi_connection: The convolutional block before residual connection. '1conv'/'3conv'
     """
 
-    def __init__(self, img_size=64, patch_size=1, in_chans=3,
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 img_size=64, patch_size=1, in_chans=3,
                  embed_dim=96, depths=[6, 6, 6, 6], num_heads=[6, 6, 6, 6],
                  window_size=7, mlp_ratio=4., qkv_bias=True, qk_scale=None,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
-                 use_checkpoint=False, upscale=2, img_range=1., upsampler='', resi_connection='1conv',
+                 use_checkpoint=False, img_range=1., upsampler='', resi_connection='1conv',
                  **kwargs):
         super(_SwinIR, self).__init__()
         num_in_ch = in_chans

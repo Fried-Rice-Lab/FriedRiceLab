@@ -5,12 +5,13 @@ import torch
 from basicsr.data import build_dataloader, build_dataset
 from basicsr.models import build_model
 from basicsr.utils import get_env_info, get_root_logger, get_time_str, make_exp_dirs
-from basicsr.utils.options import dict2str, parse_options
+from basicsr.utils.options import dict2str
 
 import archs  # noqa
 import data  # noqa
 import models  # noqa
 from tools.analyse_tool import get_model_flops, get_model_activation
+from utils import parse_options
 
 
 def analyse_pipeline(root_path, img_size: tuple = (3, 256, 256)):  # noqa
@@ -30,9 +31,9 @@ def analyse_pipeline(root_path, img_size: tuple = (3, 256, 256)):  # noqa
 
     # create analyse dataset and dataloader
     analyse_loaders = []
-    for _, dataset_opt in sorted(opt['analyse_datasets'].items() if opt['analyse_datasets'] is not None
-                                 else opt['datasets'].items()):
+    for _, dataset_opt in sorted(opt['analyse_datasets'].items()):
         dataset_opt['phase'] = 'val'
+        dataset_opt['bit'] = opt['bit']
         analyse_set = build_dataset(dataset_opt)
         analyse_loader = build_dataloader(
             analyse_set, dataset_opt, num_gpu=opt['num_gpu'], dist=opt['dist'], sampler=None, seed=opt['manual_seed'])

@@ -5,11 +5,12 @@ import torch
 from basicsr.data import build_dataloader, build_dataset
 from basicsr.models import build_model
 from basicsr.utils import get_env_info, get_root_logger, get_time_str, make_exp_dirs
-from basicsr.utils.options import dict2str, parse_options
+from basicsr.utils.options import dict2str
 
 import archs  # noqa
 import data  # noqa
 import models  # noqa
+from utils import parse_options
 
 
 def infer_pipeline(root_path):
@@ -30,6 +31,7 @@ def infer_pipeline(root_path):
     infer_loaders = []
     for _, dataset_opt in sorted(opt['infer_datasets'].items()):
         dataset_opt['phase'], dataset_opt['dataroot_lq'] = 'val', dataset_opt['dataroot_gt']  # fix it
+        dataset_opt['bit'] = opt['bit']
         infer_set = build_dataset(dataset_opt)
         infer_loader = build_dataloader(
             infer_set, dataset_opt, num_gpu=opt['num_gpu'], dist=opt['dist'], sampler=None, seed=opt['manual_seed'])

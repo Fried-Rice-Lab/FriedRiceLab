@@ -1,3 +1,7 @@
+# ---------------------------------------------------------------------------------------------------------
+# LAPAR: Linearly-Assembled Pixel-Adaptive Regression Network for Single Image Super-resolution and Beyond
+# Official GitHub: https://github.com/dvlab-research/Simple-SR
+# ---------------------------------------------------------------------------------------------------------
 import pickle
 
 import torch
@@ -129,8 +133,9 @@ class ComponentDecConv(nn.Module):
 
 
 @ARCH_REGISTRY.register()
-class LAPAR(nn.Module):  # TODO Optimize the implementation
-    def __init__(self, upscale, kernel_size, kernel_path, in_chl, nf, n_block, out_chl):
+class LAPAR(nn.Module):
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 kernel_size, kernel_path, in_chl, nf, n_block, out_chl):
         super(LAPAR, self).__init__()
 
         self.k_size = kernel_size

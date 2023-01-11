@@ -1,8 +1,12 @@
-import math
-
+# ---------------------------------------------------------------------------
+# LatticeNet: Towards Lightweight Image Super-resolution with Lattice Block
+# Official GitHub: https://github.com/ymff0592/super-resolution
+# ---------------------------------------------------------------------------
 import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
+
+from archs.utils import Upsampler
 
 
 def default_conv(in_channels, out_channels, kernel_size, bias=True):
@@ -58,28 +62,7 @@ class ResBlock(nn.Module):
         return res
 
 
-class Upsampler(nn.Sequential):
-    def __init__(self, conv, scale, n_feat, bn=False, act=False, bias=True):
-
-        m = []
-        if (scale & (scale - 1)) == 0:  # Is scale = 2^n?
-            for _ in range(int(math.log(scale, 2))):
-                m.append(conv(n_feat, 4 * n_feat, 3, bias))
-                m.append(nn.PixelShuffle(2))
-                if bn: m.append(nn.BatchNorm2d(n_feat))
-                if act: m.append(act())
-        elif scale == 3:
-            m.append(conv(n_feat, 9 * n_feat, 3, bias))
-            m.append(nn.PixelShuffle(3))
-            if bn: m.append(nn.BatchNorm2d(n_feat))
-            if act: m.append(act())
-        else:
-            raise NotImplementedError
-
-        super(Upsampler, self).__init__(*m)
-
-
-## add SELayer
+# add SELayer
 class SELayer(nn.Module):
     def __init__(self, channel, reduction=16):
         super(SELayer, self).__init__()
@@ -217,8 +200,9 @@ class LatticeBlock(nn.Module):
 
 
 @ARCH_REGISTRY.register()
-class LatticeNet(nn.Module):  # TODO Optimize the implementation
-    def __init__(self, upscale, n_feats, n_diff, n_slice):
+class LatticeNet(nn.Module):
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 n_feats, n_diff, n_slice):
         super(LatticeNet, self).__init__()
 
         # RGB mean for DIV2K
@@ -227,7 +211,7 @@ class LatticeNet(nn.Module):  # TODO Optimize the implementation
         self.sub_mean = MeanShift(255, rgb_mean, rgb_std)
 
         # define head module
-        self.conv1 = nn.Conv2d(3, n_feats, kernel_size=3, padding=1, bias=True)
+        self.conv1 = nn.Conv2d(num_in_ch, n_feats, kernel_size=3, padding=1, bias=True)
         self.conv2 = nn.Conv2d(n_feats, n_feats, kernel_size=3, padding=1, bias=True)
 
         # define body module
@@ -259,8 +243,8 @@ class LatticeNet(nn.Module):  # TODO Optimize the implementation
 
         # define tail module
         modules_tail = [nn.Conv2d(n_feats, n_feats, kernel_size=3, padding=1, bias=True),
-                        nn.Conv2d(n_feats, 3 * (upscale ** 2), kernel_size=3, padding=1, bias=True),
-                        nn.PixelShuffle(upscale)]
+                        Upsampler(upscale=upscale, in_channels=n_feats,
+                                  out_channels=num_out_ch, upsample_mode=task)]
         self.tail = nn.Sequential(*modules_tail)
 
         self.add_mean = MeanShift(255, rgb_mean, rgb_std, 1)

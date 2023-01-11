@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------
-# Basic Modules for Super Resolution Networks
+# Basic Modules for Image Restoration Networks
 #
 # Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
 # -------------------------------------------------------------------------------------

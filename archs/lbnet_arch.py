@@ -1,8 +1,14 @@
+# ---------------------------------------------------------------------------------------------------------
+# Lightweight Bimodal Network for Single-Image Super-Resolution via Symmetric CNN and Recursive Transformer
+# Official GitHub: https://github.com/wzx0826/LBNet
+# ---------------------------------------------------------------------------------------------------------
 import math
 
 import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
+
+from archs.utils import Upsampler
 
 
 def same_padding(images, ksizes, strides, rates):
@@ -279,7 +285,8 @@ class MeanShift(nn.Conv2d):
 
 @ARCH_REGISTRY.register()
 class LBNet(nn.Module):
-    def __init__(self, upscale, n_feat=32, num_head=8, reduction=1, conv=default_conv):
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 n_feat=32, num_head=8, reduction=1, conv=default_conv):
         super(LBNet, self).__init__()
 
         # RGB mean for DIV2K
@@ -287,7 +294,7 @@ class LBNet(nn.Module):
         rgb_std = (1.0, 1.0, 1.0)
         self.sub_mean = MeanShift(255, rgb_mean, rgb_std)
 
-        self.head = conv(3, n_feat, 3)
+        self.head = conv(num_in_ch, n_feat, 3)
 
         self.r1 = LFFM(n_feats=n_feat)
         self.r2 = LFFM(n_feats=n_feat)
@@ -305,8 +312,8 @@ class LBNet(nn.Module):
         self.c3 = default_conv(n_feat, n_feat, 3)
 
         modules_tail = [
-            conv(n_feat, upscale * upscale * 3, 3),
-            nn.PixelShuffle(upscale),
+            Upsampler(upscale=upscale, in_channels=n_feat,
+                      out_channels=num_out_ch, upsample_mode=task)
         ]
         self.tail = nn.Sequential(*modules_tail)
 

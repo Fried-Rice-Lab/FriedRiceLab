@@ -123,11 +123,11 @@ class RFDN(nn.Module):
 
        """
 
-    def __init__(self, upscale: int = 4, planes: int = 48, num_blocks: int = 6,
-                 distillation_rate: float = 0.5) -> None:
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes: int = 48, num_blocks: int = 6, distillation_rate: float = 0.5) -> None:
         super(RFDN, self).__init__()
 
-        self.head = Conv2d3x3(3, planes, bias=True)
+        self.head = Conv2d3x3(num_in_ch, planes, bias=True)
 
         self.body = nn.ModuleList([RFDB(planes, distillation_rate)
                                    for _ in range(num_blocks)])
@@ -136,7 +136,7 @@ class RFDN(nn.Module):
                                        nn.LeakyReLU(negative_slope=0.05, inplace=True))
 
         self.tail = Upsampler(upscale=upscale, in_channels=planes,
-                              out_channels=3, upsample_mode='l')
+                              out_channels=num_out_ch, upsample_mode=task)
 
         self.lr_conv = Conv2d3x3(planes, planes, bias=True)
 
@@ -171,11 +171,11 @@ class ERFDN(nn.Module):
 
        """
 
-    def __init__(self, upscale: int = 4, planes: int = 48, num_blocks: int = 6,
-                 distillation_rate: float = 0.5) -> None:
+    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
+                 planes: int = 48, num_blocks: int = 6, distillation_rate: float = 0.5) -> None:
         super(ERFDN, self).__init__()
 
-        self.head = Conv2d3x3(3, planes, bias=True)
+        self.head = Conv2d3x3(num_in_ch, planes, bias=True)
 
         self.body = nn.ModuleList([ERFDB(planes, distillation_rate)
                                    for _ in range(num_blocks)])
@@ -184,7 +184,7 @@ class ERFDN(nn.Module):
                                        nn.LeakyReLU(negative_slope=0.05, inplace=True))
 
         self.tail = Upsampler(upscale=upscale, in_channels=planes,
-                              out_channels=3, upsample_mode='l')
+                              out_channels=num_out_ch, upsample_mode=task)
 
         self.lr_conv = Conv2d3x3(planes, planes, bias=True)
 
@@ -211,12 +211,11 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+    # net = RFDN(upscale=4, planes=48, num_blocks=6)
+    # print(count_parameters(net))
 
-    net = RFDN(upscale=4, planes=48, num_blocks=6)
-    print(count_parameters(net))
-
-    net = ERFDN(upscale=4, planes=50, num_blocks=4, distillation_rate=0.5)
-    print(count_parameters(net))
+    # net = ERFDN(upscale=4, planes=50, num_blocks=4, distillation_rate=0.5)
+    # print(count_parameters(net))
 
     # data = torch.randn(1, 3, 120, 80)
     # print(net(data).size())
