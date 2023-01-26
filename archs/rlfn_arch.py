@@ -2,7 +2,7 @@
 # Residual Local Feature Network for Efficient Super-Resolution
 # Official GitHub: https://github.com/bytedance/RLFN
 #
-# Modified by Jinchen Zhu (~)
+# Modified by Jinchen Zhu (jinchen.z@outlook.com)
 # -----------------------------------------------------------------
 import torch
 import torch.nn as nn

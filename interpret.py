@@ -32,7 +32,7 @@ def interpret_pipeline(root_path):  # noqa
     for _, img_opt in sorted(opt['interpret_imgs'].items()):
         img, di = get_model_interpretation(model.net_g, img_opt['img_path'], img_opt['w'], img_opt['h'],
                                            use_cuda=True if opt['num_gpu'] > 0 else False)
-        os.makedirs(osp.join(opt['path']['visualization'], 'interpretation'))
+        os.makedirs(osp.join(opt['path']['visualization'], 'interpretation'), exist_ok=True)
         img.save(osp.join(opt['path']['visualization'], 'interpretation', os.path.basename(img_opt['img_path'])))
         logger.info(f"DI of {os.path.basename(img_opt['img_path'])}: {round(di, 3)}")
         logger.info("The LAM result are saved to "

@@ -3,9 +3,9 @@
 !.gitignore
 !README.md
 
-!/ELAN
-/ELAN/*
-!/ELAN/ELAN-demo.pth
+!/ESWT
+/ESWT/*
+!/ESWT/ESWT-24-6_LSR_x4.pth
 
 !/LAPAR
 /LAPAR/*

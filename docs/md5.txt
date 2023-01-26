@@ -1,0 +1,190 @@
+####################
+# Super-resolution #
+####################
+
+
+# DF2K #################################################################################################################
+eb62f12dfaec72ee63291e73e199a9d9  datasets/sr_data/DF2K/train/HR/x.lmdb/lock.mdb
+625b7995682c195e4a72cc1b2933e58f  datasets/sr_data/DF2K/train/HR/x.lmdb/meta_info.txt
+f5bb05b81da63aa50aeb44e9be12a8d4  datasets/sr_data/DF2K/train/HR/x.lmdb/data.mdb
+
+eb62f12dfaec72ee63291e73e199a9d9  datasets/sr_data/DF2K/train/LR/x2.lmdb/lock.mdb
+63121e160cd36bed7ee98b3e9e23e4f1  datasets/sr_data/DF2K/train/LR/x2.lmdb/meta_info.txt
+655ab527661214bbb48dd24467447aeb  datasets/sr_data/DF2K/train/LR/x2.lmdb/data.mdb
+
+eb62f12dfaec72ee63291e73e199a9d9  datasets/sr_data/DF2K/train/LR/x3.lmdb/lock.mdb
+bd6c95e87faf37ddd8e1c666cb38e508  datasets/sr_data/DF2K/train/LR/x3.lmdb/meta_info.txt
+bab429cec2976e4d67d72ff19de2b2db  datasets/sr_data/DF2K/train/LR/x3.lmdb/data.mdb
+
+eb62f12dfaec72ee63291e73e199a9d9  datasets/sr_data/DF2K/train/LR/x4.lmdb/lock.mdb
+3d85c2a527096ad1f496ad6d28b51e71  datasets/sr_data/DF2K/train/LR/x4.lmdb/meta_info.txt
+d953164e64f76628c29f6b0a1ec67f9a  datasets/sr_data/DF2K/train/LR/x4.lmdb/data.mdb
+
+ae974e85d6244365a55a4336b43abce7  datasets/sr_data/DF2K/val/HR/x.lmdb/lock.mdb
+692ba7e1336562d1cf3d0df566d2ba0f  datasets/sr_data/DF2K/val/HR/x.lmdb/meta_info.txt
+94263de0cde79a7170891433b50f8b26  datasets/sr_data/DF2K/val/HR/x.lmdb/data.mdb
+
+ae974e85d6244365a55a4336b43abce7  datasets/sr_data/DF2K/val/LR/x2.lmdb/lock.mdb
+2169bb49293c00f7e0111c6a63e12855  datasets/sr_data/DF2K/val/LR/x2.lmdb/meta_info.txt
+cf5cd078e75d9bbd62b01d18ad83ec4b  datasets/sr_data/DF2K/val/LR/x2.lmdb/data.mdb
+
+ae974e85d6244365a55a4336b43abce7  datasets/sr_data/DF2K/val/LR/x3.lmdb/lock.mdb
+f4d07d057c1618ab06724c8d02411973  datasets/sr_data/DF2K/val/LR/x3.lmdb/meta_info.txt
+d176d6cf86ed83811256208d45a2960e  datasets/sr_data/DF2K/val/LR/x3.lmdb/data.mdb
+
+ae974e85d6244365a55a4336b43abce7  datasets/sr_data/DF2K/val/LR/x4.lmdb/lock.mdb
+5ac45c8ce7b51979ee2db09a68c81146  datasets/sr_data/DF2K/val/LR/x4.lmdb/meta_info.txt
+2a5ceae53def9bed0c4b04664540c593  datasets/sr_data/DF2K/val/LR/x4.lmdb/data.mdb
+
+
+# Set5 #################################################################################################################
+11f2c03a5d5f118f3366baa021010673  datasets/sr_data/Set5/HR/x2.lmdb/lock.mdb
+65f55edc4afe762adbd06d0187e9fc9a  datasets/sr_data/Set5/HR/x2.lmdb/meta_info.txt
+58838eb70ccf6674eff287b406a9ff8a  datasets/sr_data/Set5/HR/x2.lmdb/data.mdb
+
+11f2c03a5d5f118f3366baa021010673  datasets/sr_data/Set5/HR/x3.lmdb/lock.mdb
+34e8a42cddafa5e0e91fa41be96e5b7b  datasets/sr_data/Set5/HR/x3.lmdb/meta_info.txt
+98be37ad1395038e80de5d91dad24adf  datasets/sr_data/Set5/HR/x3.lmdb/data.mdb
+
+11f2c03a5d5f118f3366baa021010673  datasets/sr_data/Set5/HR/x4.lmdb/lock.mdb
+65f55edc4afe762adbd06d0187e9fc9a  datasets/sr_data/Set5/HR/x4.lmdb/meta_info.txt
+58838eb70ccf6674eff287b406a9ff8a  datasets/sr_data/Set5/HR/x4.lmdb/data.mdb
+
+11f2c03a5d5f118f3366baa021010673  datasets/sr_data/Set5/LR/x2.lmdb/lock.mdb
+f007951036089e557c4694da62e02dc8  datasets/sr_data/Set5/LR/x2.lmdb/meta_info.txt
+f9519900b54650d850ce5d6ce9d6000e  datasets/sr_data/Set5/LR/x2.lmdb/data.mdb
+
+11f2c03a5d5f118f3366baa021010673  datasets/sr_data/Set5/LR/x3.lmdb/lock.mdb
+71ddf97063deec83c07f12db850a2c15  datasets/sr_data/Set5/LR/x3.lmdb/meta_info.txt
+8c353acec5ae729bbdeed732604e28d6  datasets/sr_data/Set5/LR/x3.lmdb/data.mdb
+
+11f2c03a5d5f118f3366baa021010673  datasets/sr_data/Set5/LR/x4.lmdb/lock.mdb
+b84f59338d2d4089d533bddd9a2f48b0  datasets/sr_data/Set5/LR/x4.lmdb/meta_info.txt
+d965e263b5347538edfff365ce2d8983  datasets/sr_data/Set5/LR/x4.lmdb/data.mdb
+
+
+# Set14 ################################################################################################################
+a54154af4f2fe4baa0485dd765077960  datasets/sr_data/Set14/HR/x2.lmdb/lock.mdb
+0a5188905547b3d0ab1b9dbdcd9e620d  datasets/sr_data/Set14/HR/x2.lmdb/meta_info.txt
+2e203777bf2ca2f48aa7b9c22ec823d2  datasets/sr_data/Set14/HR/x2.lmdb/data.mdb
+
+a54154af4f2fe4baa0485dd765077960  datasets/sr_data/Set14/HR/x3.lmdb/lock.mdb
+1407ff89521cfa608cbc2b61fd800909  datasets/sr_data/Set14/HR/x3.lmdb/meta_info.txt
+33d5d6800d36a3b20eb2165112da6b50  datasets/sr_data/Set14/HR/x3.lmdb/data.mdb
+
+a54154af4f2fe4baa0485dd765077960  datasets/sr_data/Set14/HR/x4.lmdb/lock.mdb
+4380b1823c24f2f42069d5b4fd2b2071  datasets/sr_data/Set14/HR/x4.lmdb/meta_info.txt
+7d2e1d0899995ce6c517f7ff52f41fa2  datasets/sr_data/Set14/HR/x4.lmdb/data.mdb
+
+a54154af4f2fe4baa0485dd765077960  datasets/sr_data/Set14/LR/x2.lmdb/lock.mdb
+3e6184ff3069f4e03a631dbd02c6c7fc  datasets/sr_data/Set14/LR/x2.lmdb/meta_info.txt
+89678d18088cfd7008b996d6b2f5eebe  datasets/sr_data/Set14/LR/x2.lmdb/data.mdb
+
+a54154af4f2fe4baa0485dd765077960  datasets/sr_data/Set14/LR/x3.lmdb/lock.mdb
+8db244a38e451f61d72fa241b0ebb50a  datasets/sr_data/Set14/LR/x3.lmdb/meta_info.txt
+164b0f919e9544fef000424c2ba8991d  datasets/sr_data/Set14/LR/x3.lmdb/data.mdb
+
+a54154af4f2fe4baa0485dd765077960  datasets/sr_data/Set14/LR/x4.lmdb/lock.mdb
+3ef6181a54868092c2870e5338cf9066  datasets/sr_data/Set14/LR/x4.lmdb/meta_info.txt
+1908afea0e1c9b9be023414f04965128  datasets/sr_data/Set14/LR/x4.lmdb/data.mdb
+
+
+# BSD100 ###############################################################################################################
+ca54c7998bf4a94ff3659eef45a171bf  datasets/sr_data/BSD100/HR/x2.lmdb/lock.mdb
+b3ac935f139de5d4dee0d489a0c09fca  datasets/sr_data/BSD100/HR/x2.lmdb/meta_info.txt
+786162c903c61a4d7befb6439136a465  datasets/sr_data/BSD100/HR/x2.lmdb/data.mdb
+
+ca54c7998bf4a94ff3659eef45a171bf  datasets/sr_data/BSD100/HR/x3.lmdb/lock.mdb
+213e32bd8948288b7df8b6cc0916e174  datasets/sr_data/BSD100/HR/x3.lmdb/meta_info.txt
+39cfb0ce7603a1eaf9e7baea8b862f43  datasets/sr_data/BSD100/HR/x3.lmdb/data.mdb
+
+ca54c7998bf4a94ff3659eef45a171bf  datasets/sr_data/BSD100/HR/x4.lmdb/lock.mdb
+b3ac935f139de5d4dee0d489a0c09fca  datasets/sr_data/BSD100/HR/x4.lmdb/meta_info.txt
+786162c903c61a4d7befb6439136a465  datasets/sr_data/BSD100/HR/x4.lmdb/data.mdb
+
+ca54c7998bf4a94ff3659eef45a171bf  datasets/sr_data/BSD100/LR/x2.lmdb/lock.mdb
+55c80000647869da935b6169cfb8595d  datasets/sr_data/BSD100/LR/x2.lmdb/meta_info.txt
+da3c626d1c84fe0e0331479b773bad9c  datasets/sr_data/BSD100/LR/x2.lmdb/data.mdb
+
+ca54c7998bf4a94ff3659eef45a171bf  datasets/sr_data/BSD100/LR/x3.lmdb/lock.mdb
+372bef464960a26c8cea5170dd5b7718  datasets/sr_data/BSD100/LR/x3.lmdb/meta_info.txt
+a7a3b47ea67bbd8222ddd7041f36a2f7  datasets/sr_data/BSD100/LR/x3.lmdb/data.mdb
+
+ca54c7998bf4a94ff3659eef45a171bf  datasets/sr_data/BSD100/LR/x4.lmdb/lock.mdb
+666cf2a7372dce1173eb507d190cb42b  datasets/sr_data/BSD100/LR/x4.lmdb/meta_info.txt
+543a41977ebc9c7fbe65bae3b8edbd8b  datasets/sr_data/BSD100/LR/x4.lmdb/data.mdb
+
+
+# Urban100 #############################################################################################################
+44927bda34a379ddff371d179cdee1c6  datasets/sr_data/Urban100/LR/x2.lmdb/lock.mdb
+a78f0a191a892acf2a60bfc2641bcf8f  datasets/sr_data/Urban100/LR/x2.lmdb/meta_info.txt
+e9efc93bdb1a1d62fe45726f910ce104  datasets/sr_data/Urban100/LR/x2.lmdb/data.mdb
+
+44927bda34a379ddff371d179cdee1c6  datasets/sr_data/Urban100/LR/x3.lmdb/lock.mdb
+1fb3e0e0eca67e597ceb81d6093ab098  datasets/sr_data/Urban100/LR/x3.lmdb/meta_info.txt
+c680e9840e515782f231f9cc19ea4023  datasets/sr_data/Urban100/LR/x3.lmdb/data.mdb
+
+44927bda34a379ddff371d179cdee1c6  datasets/sr_data/Urban100/LR/x4.lmdb/lock.mdb
+41fa72fe39edff9cc46f01f9eb4f2fee  datasets/sr_data/Urban100/LR/x4.lmdb/meta_info.txt
+705e409c44e35f7d8beea1589410f0af  datasets/sr_data/Urban100/LR/x4.lmdb/data.mdb
+
+44927bda34a379ddff371d179cdee1c6  datasets/sr_data/Urban100/HR/x2.lmdb/lock.mdb
+9770a450ac250f9b0ef9e65938c598a7  datasets/sr_data/Urban100/HR/x2.lmdb/meta_info.txt
+6c294cce22f8fbe769667003837d0534  datasets/sr_data/Urban100/HR/x2.lmdb/data.mdb
+
+44927bda34a379ddff371d179cdee1c6  datasets/sr_data/Urban100/HR/x3.lmdb/lock.mdb
+1738e30640d633fcda393bf09c9e7b04  datasets/sr_data/Urban100/HR/x3.lmdb/meta_info.txt
+5d493ed65a57fb8434fdf1c01585189e  datasets/sr_data/Urban100/HR/x3.lmdb/data.mdb
+
+44927bda34a379ddff371d179cdee1c6  datasets/sr_data/Urban100/HR/x4.lmdb/lock.mdb
+9770a450ac250f9b0ef9e65938c598a7  datasets/sr_data/Urban100/HR/x4.lmdb/meta_info.txt
+6c294cce22f8fbe769667003837d0534  datasets/sr_data/Urban100/HR/x4.lmdb/data.mdb
+
+
+# Manga109 #############################################################################################################
+bb0a1b3eb907d2bc2cf18e7410800cf8  datasets/sr_data/Manga109/HR/x2.lmdb/lock.mdb
+f82f269e12b4d3ac5c0ed02358f755cf  datasets/sr_data/Manga109/HR/x2.lmdb/meta_info.txt
+ef1ac7200e8d905adc15cb7df2670693  datasets/sr_data/Manga109/HR/x2.lmdb/data.mdb
+
+bb0a1b3eb907d2bc2cf18e7410800cf8  datasets/sr_data/Manga109/HR/x3.lmdb/lock.mdb
+791ab183e3d20f50a69e577f49e398ed  datasets/sr_data/Manga109/HR/x3.lmdb/data.mdb
+3ef0c5314e74955fa90bab2dc0d080b8  datasets/sr_data/Manga109/HR/x3.lmdb/meta_info.txt
+
+bb0a1b3eb907d2bc2cf18e7410800cf8  datasets/sr_data/Manga109/HR/x4.lmdb/lock.mdb
+e58afe99a2e963ad9244ed63117bef27  datasets/sr_data/Manga109/HR/x4.lmdb/meta_info.txt
+8f3a2cb3291aeca2f0ed048c90621f6a  datasets/sr_data/Manga109/HR/x4.lmdb/data.mdb
+
+bb0a1b3eb907d2bc2cf18e7410800cf8  datasets/sr_data/Manga109/LR/x2.lmdb/lock.mdb
+8706c2490827190f7dec9b230734f7cc  datasets/sr_data/Manga109/LR/x2.lmdb/meta_info.txt
+ff6f38531eec8774cd8a86106f934cca  datasets/sr_data/Manga109/LR/x2.lmdb/data.mdb
+
+bb0a1b3eb907d2bc2cf18e7410800cf8  datasets/sr_data/Manga109/LR/x3.lmdb/lock.mdb
+e377260e9bf985bfe7a355f290c3766c  datasets/sr_data/Manga109/LR/x3.lmdb/meta_info.txt
+e73497b76a77fb2c824277bf63cca497  datasets/sr_data/Manga109/LR/x3.lmdb/data.mdb
+
+bb0a1b3eb907d2bc2cf18e7410800cf8  datasets/sr_data/Manga109/LR/x4.lmdb/lock.mdb
+ebe74a0dddfee687ba719acc7ecd382b  datasets/sr_data/Manga109/LR/x4.lmdb/meta_info.txt
+5346efecc47006eb00a63d62e0f2ebcc  datasets/sr_data/Manga109/LR/x4.lmdb/data.mdb
+
+
+#############
+# Denoising #
+#############
+
+
+# SIDD #################################################################################################################
+57a2d9f43565b2526ca0bd723524ba21  datasets/denoising_data/SIDD/train/input_crops.lmdb/lock.mdb
+f7c4ee01ff9de44d32b546eac5b5fb46  datasets/denoising_data/SIDD/train/input_crops.lmdb/meta_info.txt
+65edca243e69a0838fa54305233c1d1d  datasets/denoising_data/SIDD/train/input_crops.lmdb/data.mdb
+
+57a2d9f43565b2526ca0bd723524ba21  datasets/denoising_data/SIDD/train/gt_crops.lmdb/lock.mdb
+f7c4ee01ff9de44d32b546eac5b5fb46  datasets/denoising_data/SIDD/train/gt_crops.lmdb/meta_info.txt
+48886fede1932c96489da33f6ba9739b  datasets/denoising_data/SIDD/train/gt_crops.lmdb/data.mdb
+
+fcde1094bf7295cd38ba2ebde92668b4  datasets/denoising_data/SIDD/val/gt_crops.lmdb/lock.mdb
+6f1b12296a89f9220da0115b8a0a2336  datasets/denoising_data/SIDD/val/gt_crops.lmdb/meta_info.txt
+d29a428453831725c400acadc15b3504  datasets/denoising_data/SIDD/val/gt_crops.lmdb/data.mdb
+
+fcde1094bf7295cd38ba2ebde92668b4  datasets/denoising_data/SIDD/val/input_crops.lmdb/lock.mdb
+6f1b12296a89f9220da0115b8a0a2336  datasets/denoising_data/SIDD/val/input_crops.lmdb/meta_info.txt
+50593864f2e01ffb8b3400780d26e5a2  datasets/denoising_data/SIDD/val/input_crops.lmdb/data.mdb
