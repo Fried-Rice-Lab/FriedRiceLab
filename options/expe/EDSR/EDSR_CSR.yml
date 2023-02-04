@@ -23,8 +23,8 @@ path:
 # training settings ####################################################################################################
 train:
   # basic setting
-  gt_size: 256
-  batch_size_per_gpu: 64
+  gt_size: 192
+  batch_size_per_gpu: 16
   total_iter: 1000000
 
   # optimizer setting
