@@ -56,9 +56,11 @@ We hope this repository helps your work.
 
 ## FRL News
 
-**23.01.26** Release the code resources of ESWT
+**23.01.31** Release the code resources of ESWT 🎉
 
-**23.01.11** FRL code v2.0 has been released 🎉
+**23.01.24** Release the manuscript of our new work ESWT on arXiv
+
+**23.01.11** FRL code v2.0 released
 
 **22.11.15** Here we are 🪧
 

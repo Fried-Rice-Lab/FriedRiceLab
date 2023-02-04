@@ -2,9 +2,9 @@
 
 [Jinpeng Shi](https://github.com/jinpeng-s)*^, Hui Li, [Tianle Liu](https://github.com/TIANLE233), [Yulong Liu](https://github.com/LiuYLong), [Mingjian Zhang](https://github.com/Zhang9317112), [Jinchen Zhu](https://github.com/Jinchen2028), Ling Zheng, Shizhuang Weng^
 
-> *: First/Co-first author
+> *: (Co-)first author(s)
 >
-> ^: Corresponding author
+> ^: (Co-)corresponding author(s)
 
 ## Table of contents
 
