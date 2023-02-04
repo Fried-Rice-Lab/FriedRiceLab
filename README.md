@@ -1,8 +1,29 @@
 # Fried Rice Lab
 
-We will release the code resources of our works here. We have also implemented many useful features and out-of-the-box image restoration models. We hope this will help you in your work.
+We will release code resources for our works here, including:
 
-This repository is mainly built on BasicSR.
+- ESWT [arXiv]
+
+We also implement many useful features, including:
+
+- Allow free combination of different models and tasks with new run commands ([2 Run](#2-run))
+
+- Analyse the complexity of a specific model on a specific task ([2.3 Analyse](#23-analyse))
+- Interpret super-resolution models using local attribute maps (LAM) ([2.4 Interpret](#24-interpret))
+- Restore your own images using existing models ([2.5 Infer](#25-infer))
+- Train/test models with any data flow ([Data Flow](#data-flow))
+- Load LMDB databases in a more customizable way ([LMDB Loading](#lmdn-loading))
+
+And many out-of-the-box image restoration models, including:
+
+- 2017: EDSR [CVPRW]
+- 2018: RCAN [ECCV], RDN [CVPR]
+- 2019: IMDN [ACM MM], RNAN [ICLR]
+- 2020: CSNLN [CVPR], LAPAR [NeurIPS], LatticeNet [ECCV], PAN [ECCV], RFDN [ECCV], SAN [CVPR], HAN [ECCV]
+- 2021: FDIWN [AAAI], HSENet [TGRS], SwinIR [ICCV]
+- 2022: BSRN [CVPRW], ELAN [ECCV], ESRT [CVPRW], LBNet [IJCAI], NAFNet [ECCV], RLFN [CVPRW], SCET [CVPRW]
+
+We hope this repository helps your work.
 
 ## Table of contents
 
@@ -49,9 +70,9 @@ This repository is mainly built on BasicSR.
 
 *Recently, transformer-based methods have made impressive progress in single-image super-resolution (SR). However, these methods are difficult to apply to lightweight SR (LSR) due to the challenge of balancing model performance and complexity. In this paper, we propose an efficient striped window transformer (ESWT). ESWT consists of efficient transformation layers (ETLs), allowing a clean structure and avoiding redundant operations. Moreover, we designed a striped window mechanism to obtain a more efficient ESWT in modeling long-term dependencies. To further exploit the potential of the transformer, we propose a novel flexible window training strategy. Without any additional cost, this strategy can further improve the performance of ESWT. Extensive experiments show that the proposed method outperforms state-of-the-art transformer-based LSR methods with fewer parameters, faster inference, smaller FLOPs, and less memory consumption, achieving a better trade-off between model performance and complexity.* [[More details and reproduction guidance](docs/ESWT.md)]
 
-> *: First/Co-first author
+> *: (Co-)first author(s)
 >
-> ^: Corresponding author
+> ^: (Co-)corresponding author(s)
 
 ## How to Use
 
@@ -290,7 +311,7 @@ python analyse.py -expe_opt options/expe/RFDN/RFDN_LSR.yml -task_opt options/tas
 
 We provide many experimental and task YML configuration files. To perform different experiments, feel **free** to combine them in the command.
 
-> 🤠 If these implementations help your work, please consider citing them.
+> 🤠 If these implementations help your work, please consider citing them. Please refer to file `docs/third_party_works.bib` for more information.
 
 ## Acknowledgements
 
