@@ -56,6 +56,10 @@ We hope this repository helps your work.
 
 ## FRL News
 
+**23.02.05** Preview. We are working on **a new work** on image super-resolution, the performance of which is shown in the figure below. The manuscript and code resources will be released as soon as possible.
+
+![](figs/preview.png)
+
 **23.01.31** Release the code resources of ESWT 🎉
 
 **23.01.24** Release the manuscript of our new work ESWT on arXiv
