@@ -34,6 +34,7 @@ def analyse_pipeline(root_path, img_size: tuple = (3, 256, 256)):  # noqa
     for _, dataset_opt in sorted(opt['analyse_datasets'].items()):
         dataset_opt['phase'] = 'val'
         dataset_opt['bit'] = opt['bit']
+        dataset_opt['scale'] = opt['scale']
         analyse_set = build_dataset(dataset_opt)
         analyse_loader = build_dataloader(
             analyse_set, dataset_opt, num_gpu=opt['num_gpu'], dist=opt['dist'], sampler=None, seed=opt['manual_seed'])
@@ -56,6 +57,12 @@ def analyse_pipeline(root_path, img_size: tuple = (3, 256, 256)):  # noqa
     acts, conv = get_model_activation(model.net_g, img_size)
     logger.info(f"#Acts [M]: {acts / 10 ** 6}")
     logger.info(f"#Conv: {conv}")
+
+    # The #Ave. Time result of the first dataset is **incorrect** (higher than the real value).
+    # Just infer the first dataset **twice** to get the correct results
+    for analyse_loader in [analyse_loaders[0]]:
+        torch.cuda.reset_peak_memory_stats()
+        _, _ = model.nondist_analysis(analyse_loader)
 
     # analyse Ave. Time and GPU Mem.
     for analyse_loader in analyse_loaders:

@@ -188,8 +188,6 @@ python analyse.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt option
 
 ![](figs/analyse.png)
 
-> ⚠️ The **#Ave. Time** result of the first dataset is **incorrect** (higher than the real value). We are working on it.
-
 #### 2.4 Interpret
 
 This function comes from the paper "Interpreting Super-Resolution Networks with Local Attribution Maps". When reconstructing the patches marked with red boxes, a higher DI indicates involving a larger range of contextual information, and a darker color indicates a higher degree of contribution.
