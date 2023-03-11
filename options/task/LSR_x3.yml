@@ -11,19 +11,28 @@ scale: 3
 num_in_ch: 3
 num_out_ch: 3
 task: lsr
+hook_layer_type: Conv2d
 
 
 # dataset and data loader settings #####################################################################################
 datasets:
   train:
-    name: DF2K_train
+    name: DIV2K_train
     type: IRDataset
     dataroot_gt: datasets/sr_data/DF2K/train/HR/x.lmdb
     dataroot_lq: datasets/sr_data/DF2K/train/LR/x3.lmdb
-    meta_info_file: datasets/meta_info/DF2K_train.txt
-    # meta_info_file: datasets/meta_info/DIV2K_train.txt # if you prefer to use DIV2K
+    meta_info_file: datasets/meta_info/DIV2K_train.txt
     io_backend:
       type: lmdb
+
+    extra_datasets:
+      extra_0:
+        name: Flickr2K_train
+        dataroot_gt: datasets/sr_data/DF2K/train/HR/x.lmdb
+        dataroot_lq: datasets/sr_data/DF2K/train/LR/x3.lmdb
+        meta_info_file: datasets/meta_info/Flickr2K_train.txt
+        io_backend:
+          type: lmdb
 
     # data enhancement
     use_hflip: true
@@ -43,14 +52,14 @@ datasets:
     dataroot_gt: datasets/sr_data/DF2K/val/HR/x.lmdb
     dataroot_lq: datasets/sr_data/DF2K/val/LR/x3.lmdb
     meta_info_file: datasets/meta_info/DF2K_val_10.txt
-    # meta_info_file: datasets/meta_info/DF2K_val_10.txt # if you prefer to use the complete DIV2K validation set
+    # meta_info_file: datasets/meta_info/DF2K_val.txt # if you prefer to use the complete DIV2K validation set
     io_backend:
       type: lmdb
 
 
 # test datasets ########################################################################################################
 test_datasets:
-  test_0:  # demo dataset
+  test_0: # demo dataset
     name: Demo_Set5
     type: IRDataset
     dataroot_gt: datasets/demo_data/Demo_Set5/HR/x3
@@ -109,7 +118,7 @@ test_datasets:
 
 # analyse datasets #####################################################################################################
 analyse_datasets:
-  analyse_0:  # demo dataset
+  analyse_0: # demo dataset
     name: Demo_Set5
     type: IRDataset
     dataroot_gt: datasets/demo_data/Demo_Set5/HR/x3
@@ -157,10 +166,18 @@ analyse_datasets:
 #    io_backend:
 #      type: lmdb
 
+#  analyse_6:
+#    name: DF2K_val
+#    type: IRDataset
+#    dataroot_gt: datasets/sr_data/DF2K/val/HR/x.lmdb
+#    dataroot_lq: datasets/sr_data/DF2K/val/LR/x3.lmdb
+#    io_backend:
+#      type: lmdb
+
 
 # infer datasets #######################################################################################################
 infer_datasets:
-  infer_1:  # demo dataset
+  infer_0: # demo dataset
     name: Set5_GT
     type: IRDataset
     dataroot_gt: datasets/demo_data/Demo_Set5/HR/x3
@@ -168,9 +185,37 @@ infer_datasets:
       type: disk
 
 
+# cka datasets #########################################################################################################
+cka_datasets:
+  cka_0:
+    name: DF2K_val
+    type: IRDataset
+    dataroot_gt: datasets/sr_data/DF2K/val/HR/x.lmdb
+    dataroot_lq: datasets/sr_data/DF2K/val/LR/x3.lmdb
+    # meta_info_file: datasets/meta_info/DF2K_val_10.txt
+    meta_info_file: datasets/meta_info/DF2K_val.txt # if you prefer to use the complete DIV2K validation set
+    io_backend:
+      type: lmdb
+    input_size: 288
+
+
+# mad datasets #########################################################################################################
+mad_datasets:
+  mad_0:
+    name: DF2K_val
+    type: IRDataset
+    dataroot_gt: datasets/sr_data/DF2K/val/HR/x.lmdb
+    dataroot_lq: datasets/sr_data/DF2K/val/LR/x3.lmdb
+    # meta_info_file: datasets/meta_info/DF2K_val_10.txt
+    meta_info_file: datasets/meta_info/DF2K_val.txt # if you prefer to use the complete DIV2K validation set
+    io_backend:
+      type: lmdb
+    input_size: 288
+
+
 # interpret imgs #######################################################################################################
 interpret_imgs:
-  img_1:
+  img_0:
     img_path: datasets/demo_data/Urban7/7.png
     w: 110
     h: 150

@@ -1,3 +1,8 @@
+# --------------------------------------------------------------------------------
+# Infer your own images on a specified model on a specified task.
+#
+# Implemented by Jinpeng Shi (https://github.com/jinpeng-s)
+# --------------------------------------------------------------------------------
 import logging
 from os import path as osp
 

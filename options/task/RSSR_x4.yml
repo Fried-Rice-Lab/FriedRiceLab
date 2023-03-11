@@ -11,6 +11,7 @@ scale: 4
 num_in_ch: 3
 num_out_ch: 3
 task: csr
+hook_layer_type: Conv2d
 
 
 # dataset and data loader settings #####################################################################################
@@ -36,7 +37,7 @@ datasets:
 
 
 # val datasets #########################################################################################################
-  val:
+  val_0:
     name: AID_val
     type: IRDataset
     dataroot_gt: datasets/rssr_data/AID/HR/x4
@@ -49,11 +50,11 @@ datasets:
 
 # test datasets ########################################################################################################
 test_datasets:
-  test_0:  # demo dataset
+  test_0: # demo dataset
     name: Demo_Set5
     type: IRDataset
-    dataroot_gt: datasets/sr_data/Demo_Set5/HR/x4
-    dataroot_lq: datasets/sr_data/Demo_Set5/LRBI/x4
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x4
     io_backend:
       type: disk
 
@@ -284,11 +285,11 @@ test_datasets:
 
 # analyse datasets #####################################################################################################
 analyse_datasets:
-  analyse_0:  # demo dataset
+  analyse_0: # demo dataset
     name: Demo_Set5
     type: IRDataset
-    dataroot_gt: datasets/sr_data/Demo_Set5/HR/x4
-    dataroot_lq: datasets/sr_data/Demo_Set5/LRBI/x4
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x4
     io_backend:
       type: disk
 
@@ -311,18 +312,46 @@ analyse_datasets:
 
 # infer datasets #######################################################################################################
 infer_datasets:
-  infer_1:  # demo dataset
+  infer_0: # demo dataset
     name: Set5_GT
     type: IRDataset
-    dataroot_gt: datasets/sr_data/Demo_Set5/HR/x4
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
     io_backend:
       type: disk
 
 
+# cka datasets #########################################################################################################
+cka_datasets:
+  cka_0:
+    name: AID_val
+    type: IRDataset
+    dataroot_gt: datasets/rssr_data/AID/HR/x4
+    dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+    meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    input_size: 288
+
+
+# mad datasets #########################################################################################################
+mad_datasets:
+  mad_0:
+    name: AID_val
+    type: IRDataset
+    dataroot_gt: datasets/rssr_data/AID/HR/x4
+    dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+    meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    input_size: 288
+
+
 # interpret imgs #######################################################################################################
 interpret_imgs:
-  img_1:
-    img_path: datasets/sr_data/Urban7/7.png
+  img_0:
+    img_path: datasets/demo_data/Urban7/7.png
     w: 110
     h: 150
 

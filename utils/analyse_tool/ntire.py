@@ -5,8 +5,8 @@ import argparse
 import json
 
 from pprint import pprint
-from tools.analyse_tool.model_summary import get_model_activation, get_model_flops
-from tools.analyse_tool import utils_logger, utils_image as util
+from utils.analyse_tool.model_summary import get_model_activation, get_model_flops
+from utils.analyse_tool import utils_logger, utils_image as util
 
 
 def select_model(args, device):

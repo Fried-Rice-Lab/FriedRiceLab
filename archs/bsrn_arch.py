@@ -9,10 +9,10 @@ import torch.nn as nn
 import torch.nn.functional as f
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, CCA, Upsampler, DepthwiseSeparableConv2d
+from archs.utils import Conv2d1x1, Conv2d3x3, CCA, Upsampler, DWConv2d
 
 
-class DWConv2d33(DepthwiseSeparableConv2d):
+class DWConv2d33(DWConv2d):
     r"""
 
     Args:

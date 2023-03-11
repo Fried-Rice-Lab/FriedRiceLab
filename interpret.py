@@ -1,3 +1,9 @@
+# --------------------------------------------------------------------------------
+# Analyze super-resolution models using LAM.
+# Official GitHub: https://github.com/X-Lowlevel-Vision/LAM_Demo
+#
+# Modified by Jinpeng Shi (https://github.com/jinpeng-s)
+# --------------------------------------------------------------------------------
 import logging
 import os.path
 from os import path as osp
@@ -9,8 +15,7 @@ from basicsr.utils.options import dict2str
 import archs  # noqa
 import data  # noqa
 import models  # noqa
-from tools.interpret_tool import get_model_interpretation
-from utils import parse_options, make_exp_dirs
+from utils import parse_options, make_exp_dirs, get_model_interpretation
 
 
 def interpret_pipeline(root_path):  # noqa

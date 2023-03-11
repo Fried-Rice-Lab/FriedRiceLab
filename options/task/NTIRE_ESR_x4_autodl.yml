@@ -1,0 +1,174 @@
+# --------------------------------------------------------------------------------
+# Basic experiment YML file of NTIRE 2023 ESR challenge.
+#
+# Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
+# --------------------------------------------------------------------------------
+
+
+# general settings #####################################################################################################
+task_name: NTIRE_ESR
+scale: 4
+num_in_ch: 3
+num_out_ch: 3
+task: lsr
+hook_layer_type: Conv2d
+
+
+# dataset and data loader settings #####################################################################################
+datasets:
+  #  train:
+  #    name: DF2K
+  #    type: IRDataset
+  #    dataroot_gt: /root/autodl-tmp/DF2K/DF2K_train_HR_sub
+  #    dataroot_lq: /root/autodl-tmp/DF2K/DF2K_train_LR_bicubic/X4_sub
+  #    meta_info_file: datasets/meta_info/DF2K_train.txt
+  #    io_backend:
+  #      type: disk
+
+  train:
+    name: DIV2K
+    type: IRDataset
+    dataroot_gt: /root/autodl-tmp/DF2K/DF2K_train_HR_sub
+    dataroot_lq: /root/autodl-tmp/DF2K/DF2K_train_LR_bicubic/X4_sub
+    meta_info_file: datasets/meta_info/DIV2K_train.txt
+    io_backend:
+      type: disk
+
+    extra_datasets:
+      extra_17:
+        name: Flickr2K
+        dataroot_gt: /root/autodl-tmp/DF2K/DF2K_train_HR_sub
+        dataroot_lq: /root/autodl-tmp/DF2K/DF2K_train_LR_bicubic/X4_sub
+        meta_info_file: datasets/meta_info/Flickr2K_train.txt
+        io_backend:
+          type: disk
+
+    #      extra_20:
+    #        name: LSDIR
+    #        dataroot_gt: /root/autodl-tmp/LSDIR/HR/x
+    #        dataroot_lq: /root/autodl-tmp/LSDIR/LR/x4
+    #        filename_tmpl: '{}x4'
+    #        io_backend:
+    #          type: disk
+
+    # data enhancement
+    use_hflip: true
+    use_rot: true
+
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 4
+    dataset_enlarge_ratio: 1
+    prefetch_mode: ~
+
+
+# val datasets #########################################################################################################
+  val_0:
+    name: DF2K-val
+    type: IRDataset
+    dataroot_gt: /root/autodl-tmp/DIV2K/DIV2K_valid_HR
+    dataroot_lq: /root/autodl-tmp/DIV2K/DIV2K_valid_LR_bicubic/X4
+    filename_tmpl: '{}x4'
+    io_backend:
+      type: disk
+
+# test datasets ########################################################################################################
+test_datasets:
+  test_0: # demo dataset
+    name: Demo_Set5
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    dataroot_lq: datasets/demo_data/Demo_Set5/LR/x4
+    io_backend:
+      type: disk
+
+  test_1:
+    name: DF2K-val
+    type: IRDataset
+    dataroot_gt: /root/autodl-tmp/DIV2K/DIV2K_valid_HR
+    dataroot_lq: /root/autodl-tmp/DIV2K/DIV2K_valid_LR_bicubic/X4
+    filename_tmpl: '{}x4'
+    io_backend:
+      type: disk
+
+
+# analyse datasets #####################################################################################################
+analyse_datasets:
+  analyse_0: # demo dataset
+    name: Demo_Set5
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    dataroot_lq: datasets/demo_data/Demo_Set5/LR/x4
+    io_backend:
+      type: disk
+
+  analyse_1:
+    name: DF2K-val
+    type: IRDataset
+    dataroot_gt: /root/autodl-tmp/DIV2K/DIV2K_valid_HR
+    dataroot_lq: /root/autodl-tmp/DIV2K/DIV2K_valid_LR_bicubic/X4
+    filename_tmpl: '{}x4'
+    io_backend:
+      type: disk
+
+
+# infer datasets #######################################################################################################
+infer_datasets:
+  infer_0: # demo dataset
+    name: Set5_GT
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    io_backend:
+      type: disk
+
+
+# cka datasets #########################################################################################################
+cka_datasets:
+  cka_0:
+    name: DF2K_val
+    type: IRDataset
+    dataroot_gt: datasets/sr_data/DF2K/val/HR/x.lmdb
+    dataroot_lq: datasets/sr_data/DF2K/val/LR/x4.lmdb
+    # meta_info_file: datasets/meta_info/DF2K_val_10.txt
+    meta_info_file: datasets/meta_info/DF2K_val.txt # if you prefer to use the complete DIV2K validation set
+    io_backend:
+      type: lmdb
+    input_size: 288
+
+
+# mad datasets #########################################################################################################
+mad_datasets:
+  mad_0:
+    name: DF2K_val
+    type: IRDataset
+    dataroot_gt: datasets/sr_data/DF2K/val/HR/x.lmdb
+    dataroot_lq: datasets/sr_data/DF2K/val/LR/x4.lmdb
+    # meta_info_file: datasets/meta_info/DF2K_val_10.txt
+    meta_info_file: datasets/meta_info/DF2K_val.txt # if you prefer to use the complete DIV2K validation set
+    io_backend:
+      type: lmdb
+    input_size: 288
+
+
+# interpret imgs #######################################################################################################
+interpret_imgs:
+  img_0:
+    img_path: datasets/demo_data/Urban7/7.png
+    w: 110
+    h: 150
+
+
+# logging settings #####################################################################################################
+logger:
+  print_freq: 1000
+  save_checkpoint_freq: 1000
+  use_tb_logger: false
+  wandb:
+    project: ~
+    resume_id: ~
+
+
+# dist training settings ###############################################################################################
+dist_params:
+  backend: nccl
+  port: 4000

@@ -9,9 +9,9 @@ from torch.nn import functional as f
 
 from ._linear import GroupLinear
 
-__all__ = ['Conv2d1x1', 'Conv2d3x3', 'ContextGatedConv2d',
-           'ShiftConv2d1x1', 'MeanShift', 'AffineConv2d1x1',
-           'DepthwiseSeparableConv2d']
+__all__ = ['Conv2d1x1', 'Conv2d3x3', 'MeanShift',
+           'DWConv2d', 'BSConv2d', 'CGConv2d',
+           'ShiftConv2d1x1', 'AffineConv2d1x1']
 
 
 class Conv2d1x1(nn.Conv2d):
@@ -32,7 +32,105 @@ class Conv2d3x3(nn.Conv2d):
                                         dilation=dilation, groups=groups, bias=bias, **kwargs)
 
 
-class ContextGatedConv2d(nn.Conv2d):
+class MeanShift(nn.Conv2d):
+    r"""
+
+    Args:
+        rgb_range (int):
+        sign (int):
+        data_type (str):
+
+    """
+
+    def __init__(self, rgb_range: int, sign: int = -1, data_type: str = 'DIV2K') -> None:
+        super(MeanShift, self).__init__(3, 3, kernel_size=(1, 1))
+
+        rgb_std = (1.0, 1.0, 1.0)
+        if data_type == 'DIV2K':
+            # RGB mean for DIV2K 1-800
+            rgb_mean = (0.4488, 0.4371, 0.4040)
+        elif data_type == 'DF2K':
+            # RGB mean for DF2K 1-3450
+            rgb_mean = (0.4690, 0.4490, 0.4036)
+        else:
+            raise NotImplementedError(f'Unknown data type for MeanShift: {data_type}.')
+
+        std = torch.Tensor(rgb_std)
+        self.weight.data = torch.eye(3).view(3, 3, 1, 1) / std.view(3, 1, 1, 1)
+        self.bias.data = sign * rgb_range * torch.Tensor(rgb_mean) / std
+        for p in self.parameters():
+            p.requires_grad = False
+
+
+class DWConv2d(nn.Module):
+    r"""
+
+    Args:
+        in_channels (int):
+        out_channels (int):
+        kernel_size (tuple):
+        stride (tuple):
+        padding (tuple):
+        dilation (tuple):
+        groups (int):
+        bias (bool):
+
+    """
+
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: tuple, stride: tuple,
+                 padding: tuple, dilation: tuple = (1, 1), groups: int = None, bias: bool = True,
+                 **kwargs) -> None:  # noqa
+        super(DWConv2d, self).__init__()
+
+        groups = groups or in_channels
+
+        self.dw = nn.Conv2d(in_channels=in_channels, out_channels=in_channels,
+                            kernel_size=kernel_size, stride=stride, padding=padding,
+                            dilation=dilation, groups=groups, bias=bias)
+        self.pw = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
+                            kernel_size=(1, 1), stride=(1, 1), padding=(0, 0),
+                            dilation=(1, 1), groups=1, bias=False)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.pw(self.dw(x))
+
+
+class BSConv2d(nn.Module):
+    r"""Blueprint Separable Conv (U).
+
+    Modified from https://github.com/xiaom233/BSRN.
+
+    Args:
+        in_channels (int):
+        out_channels (int):
+        kernel_size (tuple):
+        stride (tuple):
+        padding (tuple):
+        dilation (tuple):
+        groups (int):
+        bias (bool):
+
+    """
+
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: tuple, stride: tuple,
+                 padding: tuple, dilation: tuple = (1, 1), groups: int = None, bias: bool = True,
+                 **kwargs) -> None:  # noqa
+        super(BSConv2d, self).__init__()
+
+        groups = groups or out_channels
+
+        self.pw = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
+                            kernel_size=(1, 1), stride=(1, 1), padding=(0, 0),
+                            dilation=(1, 1), groups=1, bias=False)
+        self.dw = nn.Conv2d(in_channels=out_channels, out_channels=out_channels,
+                            kernel_size=kernel_size, stride=stride, padding=padding,
+                            dilation=dilation, groups=groups, bias=bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.dw(self.pw(x))
+
+
+class CGConv2d(nn.Conv2d):
     r"""Context-Gated Convolution.
 
     This version of Context-Gated Convolution supports any input size. Modified
@@ -56,9 +154,9 @@ class ContextGatedConv2d(nn.Conv2d):
                  padding: tuple, dilation: tuple = (1, 1), linear_groups: int = 12,
                  codec_bias: bool = False, use_bn: bool = True, act_layer: nn.Module = nn.ReLU,
                  **kwargs) -> None:
-        super(ContextGatedConv2d, self).__init__(in_channels=in_channels, out_channels=out_channels,
-                                                 kernel_size=kernel_size, stride=stride, padding=padding,
-                                                 dilation=dilation, groups=1, bias=False, **kwargs)  # TODO add bias
+        super(CGConv2d, self).__init__(in_channels=in_channels, out_channels=out_channels,
+                                       kernel_size=kernel_size, stride=stride, padding=padding,
+                                       dilation=dilation, groups=1, bias=False, **kwargs)  # TODO add bias
 
         self.latent_size = self.kernel_size[0] * self.kernel_size[1] // 2 + 1  # e
         self.act = act_layer(inplace=True)
@@ -175,36 +273,6 @@ class ShiftConv2d1x1(nn.Conv2d):
         return x
 
 
-class MeanShift(nn.Conv2d):
-    r"""
-
-    Args:
-        rgb_range (int):
-        sign (int):
-        data_type (str):
-
-    """
-
-    def __init__(self, rgb_range: int, sign: int = -1, data_type: str = 'DIV2K') -> None:
-        super(MeanShift, self).__init__(3, 3, kernel_size=(1, 1))
-
-        rgb_std = (1.0, 1.0, 1.0)
-        if data_type == 'DIV2K':
-            # RGB mean for DIV2K 1-800
-            rgb_mean = (0.4488, 0.4371, 0.4040)
-        elif data_type == 'DF2K':
-            # RGB mean for DF2K 1-3450
-            rgb_mean = (0.4690, 0.4490, 0.4036)
-        else:
-            raise NotImplementedError(f'Unknown data type for MeanShift: {data_type}.')
-
-        std = torch.Tensor(rgb_std)
-        self.weight.data = torch.eye(3).view(3, 3, 1, 1) / std.view(3, 1, 1, 1)
-        self.bias.data = sign * rgb_range * torch.Tensor(rgb_mean) / std
-        for p in self.parameters():
-            p.requires_grad = False
-
-
 class AffineConv2d1x1(nn.Conv2d):
     r"""
 
@@ -224,39 +292,6 @@ class AffineConv2d1x1(nn.Conv2d):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x * self.weight + self.bias
-
-
-class DepthwiseSeparableConv2d(nn.Module):
-    r"""
-
-    Args:
-        in_channels (int):
-        out_channels (int):
-        kernel_size (tuple):
-        stride (tuple):
-        padding (tuple):
-        dilation (tuple):
-        groups (int):
-        bias (bool):
-
-    """
-
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: tuple, stride: tuple,
-                 padding: tuple, dilation: tuple = (1, 1), groups: int = None, bias: bool = True,
-                 **kwargs) -> None:  # noqa
-        super(DepthwiseSeparableConv2d, self).__init__()
-
-        groups = groups or in_channels
-
-        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=in_channels,
-                              kernel_size=kernel_size, stride=stride, padding=padding,
-                              dilation=dilation, groups=groups, bias=bias)
-        self.pointwise = nn.Conv2d(in_channels=in_channels, out_channels=out_channels,
-                                   kernel_size=(1, 1), stride=(1, 1), padding=(0, 0),
-                                   dilation=(1, 1), groups=1, bias=False)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.pointwise(self.conv(x))
 
 
 if __name__ == '__main__':

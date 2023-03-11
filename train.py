@@ -13,6 +13,7 @@ from basicsr.models import build_model
 from basicsr.utils import (AvgTimer, MessageLogger, check_resume, get_env_info, get_root_logger, get_time_str,
                            init_tb_logger, init_wandb_logger, scandir)
 from basicsr.utils.options import copy_opt_file, dict2str
+from torch.utils.data import ConcatDataset
 
 import archs  # noqa
 import data  # noqa
@@ -42,7 +43,24 @@ def create_train_val_dataloader(opt, logger):
         dataset_opt['batch_size_per_gpu'] = opt['train']['batch_size_per_gpu']
         if phase == 'train':
             dataset_enlarge_ratio = dataset_opt.get('dataset_enlarge_ratio', 1)
-            train_set = build_dataset(dataset_opt)
+            train_sets = [build_dataset(dataset_opt)]
+            datasets_used = f"\n\t\t{dataset_opt['name']}: {len(train_sets[0])} images"
+
+            extra_datasets = dataset_opt.get('extra_datasets', None)
+            if extra_datasets is not None:
+                for _, extra_dataset in extra_datasets.items():
+                    _dataset_opt = dataset_opt
+                    _dataset_opt['name'] = extra_dataset['name']
+                    _dataset_opt['dataroot_gt'] = extra_dataset['dataroot_gt']
+                    _dataset_opt['dataroot_lq'] = extra_dataset['dataroot_lq']
+                    _dataset_opt['meta_info_file'] = extra_dataset.get('meta_info_file', 'None')
+                    _dataset_opt['filename_tmpl'] = extra_dataset.get('filename_tmpl', '{}')
+                    _dataset_opt['io_backend'] = extra_dataset['io_backend']
+                    _extra_dataset = build_dataset(_dataset_opt)
+                    train_sets.append(_extra_dataset)
+                    datasets_used = f"{datasets_used}\n\t\t{_dataset_opt['name']}: {len(_extra_dataset)} images"
+
+            train_set = ConcatDataset(train_sets)
             train_sampler = EnlargedSampler(train_set, opt['world_size'], opt['rank'], dataset_enlarge_ratio)
             train_loader = build_dataloader(
                 train_set,
@@ -55,9 +73,10 @@ def create_train_val_dataloader(opt, logger):
             num_iter_per_epoch = math.ceil(
                 len(train_set) * dataset_enlarge_ratio / (dataset_opt['batch_size_per_gpu'] * opt['world_size']))
             total_iters = int(opt['train']['total_iter'])
-            total_epochs = math.ceil(total_iters / (num_iter_per_epoch))
+            total_epochs = math.ceil(total_iters / num_iter_per_epoch)
             logger.info('Training statistics:'
-                        f'\n\tNumber of train images: {len(train_set)}'
+                        f'\n\tTraining set(s) used: {datasets_used}'
+                        f'\n\tNumber of total train images: {len(train_set)}'
                         f'\n\tDataset enlarge ratio: {dataset_enlarge_ratio}'
                         f'\n\tBatch size per gpu: {dataset_opt["batch_size_per_gpu"]}'
                         f'\n\tWorld size (gpu number): {opt["world_size"]}'
