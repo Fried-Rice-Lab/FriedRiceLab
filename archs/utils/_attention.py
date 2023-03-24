@@ -3,15 +3,17 @@
 #
 # Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
 # -------------------------------------------------------------------------------------
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as f
+from einops import rearrange
 
 from ._conv import Conv2d1x1, Conv2d3x3
 
-__all__ = ['ChannelAttention', 'SpatialAttention', 'CBAM',
-           'CrissCrossAttention', 'PixelAttention',
-           'DepthwiseSeparablePixelAttention', 'AFEB', 'CCA', 'ESA']
+__all__ = ['ChannelAttention', 'SpatialAttention', 'PixelAttention',
+           'SABase4D', 'CrissCrossAttention',
+           'CBAM', 'CCA', 'ESA']
 
 
 class ChannelAttention(nn.Module):
@@ -60,24 +62,130 @@ class SpatialAttention(nn.Module):
         return x * self.sig(x)
 
 
-class CBAM(nn.Module):
-    r"""CBAM from "CBAM: Convolutional Block Attention Module".
+class PixelAttention(nn.Module):
+    r"""Pixel Attention from "Efficient Image Super-Resolution Using Pixel Attention".
 
     Args:
         planes (int):
-        reduction (int):
-        act_layer (nn.Module):
+        bias (bool):
 
     """
 
-    def __init__(self, planes: int, reduction: int = 8, act_layer: nn.Module = nn.ReLU) -> None:
-        super(CBAM, self).__init__()
+    def __init__(self, planes: int, bias: bool = False) -> None:
+        super(PixelAttention, self).__init__()
 
-        self.ca = ChannelAttention(planes, reduction, act_layer)
-        self.sa = SpatialAttention()
+        self.conv = Conv2d1x1(planes, planes, bias=bias)  # 同时建立C * H * W的注意力
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.sa(self.ca(x))
+        return x * torch.sigmoid(self.conv(x))
+
+
+class SABase4D(nn.Module):
+    r"""Self attention for 4D input.
+
+    Args:
+        dim (int): Number of input channels
+        num_heads (int): Number of attention heads
+        attn_layer (list): Layers used to calculate attn
+        proj_layer (list): Layers used to proj output
+        window_list (tuple): List of window sizes. Input will be equally divided
+            by channel to use different windows sizes
+        shift_list (tuple): list of shift sizes
+        return_attns (bool): Returns attns or not
+
+    Returns:
+        b c h w -> b c h w
+    """
+
+    def __init__(self, dim: int,
+                 num_heads: int,
+                 attn_layer: list = None,
+                 proj_layer: list = None,
+                 window_list: tuple = ((8, 8),),
+                 shift_list: tuple = None,
+                 return_attns: bool = False,
+                 ) -> None:
+        super(SABase4D, self).__init__()
+
+        self.dim = dim
+        self.num_heads = num_heads
+        self.return_attns = return_attns
+
+        self.window_list = window_list
+        if shift_list is not None:
+            assert len(shift_list) == len(window_list)
+            self.shift_list = shift_list
+        else:
+            self.shift_list = ((0, 0),) * len(window_list)
+
+        self.attn = nn.Sequential(*attn_layer if attn_layer is not None else [nn.Identity()])
+        self.proj = nn.Sequential(*proj_layer if proj_layer is not None else [nn.Identity()])
+
+    @staticmethod
+    def check_image_size(x: torch.Tensor, window_size: tuple) -> torch.Tensor:
+        _, _, h, w = x.size()
+        windows_num_h = math.ceil(h / window_size[0])
+        windows_num_w = math.ceil(w / window_size[1])
+        mod_pad_h = windows_num_h * window_size[0] - h
+        mod_pad_w = windows_num_w * window_size[1] - w
+        return f.pad(x, (0, mod_pad_w, 0, mod_pad_h), 'reflect')
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor or tuple:
+        r"""
+        Args:
+            x: b c h w
+
+        Returns:
+            b c h w -> b c h w
+        """
+        # calculate qkv
+        qkv = self.attn(x)
+        _, C, _, _ = qkv.size()
+
+        # split channels
+        qkv_list = torch.split(qkv, [C // len(self.window_list)] * len(self.window_list), dim=1)
+
+        output_list = list()
+        if self.return_attns:
+            attn_list = list()
+
+        for attn_slice, window_size, shift_size in zip(qkv_list, self.window_list, self.shift_list):
+            _, _, h, w = attn_slice.size()
+            attn_slice = self.check_image_size(attn_slice, window_size)
+
+            # roooll!
+            if shift_size != (0, 0):
+                attn_slice = torch.roll(attn_slice, shifts=shift_size, dims=(2, 3))
+
+            # cal attn
+            _, _, H, W = attn_slice.size()
+            q, v = rearrange(attn_slice, 'b (qv head c) (nh ws1) (nw ws2) -> qv (b head nh nw) (ws1 ws2) c',
+                             qv=2, head=self.num_heads,
+                             ws1=window_size[0], ws2=window_size[1])
+            attn = (q @ q.transpose(-2, -1))
+            attn = f.softmax(attn, dim=-1)
+            if self.return_attns:
+                attn_list.append(attn.reshape(self.num_heads, -1,
+                                              window_size[0] * window_size[1],
+                                              window_size[0] * window_size[1]))  # noqa
+            output = rearrange(attn @ v, '(b head nh nw) (ws1 ws2) c -> b (head c) (nh ws1) (nw ws2)',
+                               head=self.num_heads,
+                               nh=H // window_size[0], nw=W // window_size[1],
+                               ws1=window_size[0], ws2=window_size[1])
+
+            # roooll back!
+            if shift_size != (0, 0):
+                output = torch.roll(output, shifts=(-shift_size[0], -shift_size[1]), dims=(2, 3))
+
+            output_list.append(output[:, :, :h, :w])
+
+        # proj output
+        output = self.proj(torch.cat(output_list, dim=1))
+
+        if self.return_attns:
+            return output, attn_list
+        else:
+            return output
 
 
 class CrissCrossAttention(nn.Module):
@@ -140,69 +248,50 @@ class CrissCrossAttention(nn.Module):
         return self.gamma * (out_h + out_w) + x
 
 
-class PixelAttention(nn.Module):
-    r"""Pixel Attention from "Efficient Image Super-Resolution Using Pixel Attention".
+class CBAM(nn.Module):
+    r"""CBAM from "CBAM: Convolutional Block Attention Module".
 
     Args:
         planes (int):
-        bias (bool):
+        reduction (int):
+        act_layer (nn.Module):
 
     """
 
-    def __init__(self, planes: int, bias: bool = False) -> None:
-        super(PixelAttention, self).__init__()
+    def __init__(self, planes: int, reduction: int = 8, act_layer: nn.Module = nn.ReLU) -> None:
+        super(CBAM, self).__init__()
 
-        self.conv = Conv2d1x1(planes, planes, bias=bias)  # 同时建立C * H * W的注意力
+        self.ca = ChannelAttention(planes, reduction, act_layer)
+        self.sa = SpatialAttention()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x * torch.sigmoid(self.conv(x))
+        return self.sa(self.ca(x))
 
 
-class DepthwiseSeparablePixelAttention(nn.Module):
-    r"""Depthwise Separable Pixel Attention.
-
-    Args:
-        planes (int):
-
+class CCA(nn.Module):
+    r"""Contrast-aware Channel Attention.
     """
 
-    def __init__(self, planes: int, kernel_size: tuple, stride: tuple, padding: tuple,
-                 dilation: tuple = (1, 1), **kwargs) -> None:  # noqa
-        super(DepthwiseSeparablePixelAttention, self).__init__()
+    def __init__(self, planes: int, reduction: int = 16) -> None:
+        super(CCA, self).__init__()
 
-        self.HW = nn.Conv2d(in_channels=planes, out_channels=planes,  # 建立H * W的注意力
-                            kernel_size=kernel_size, stride=stride, padding=padding,
-                            dilation=dilation, groups=planes, bias=False)
-        self.C = nn.Conv2d(in_channels=planes, out_channels=planes,  # 建立C的注意力
-                           kernel_size=(1, 1), stride=(1, 1), padding=(0, 0),
-                           dilation=(1, 1), groups=1, bias=False)
+        self.conv = nn.Sequential(Conv2d1x1(planes, planes // reduction),
+                                  nn.ReLU(inplace=True),
+                                  Conv2d1x1(planes // reduction, planes))
+        self.sig = nn.Sigmoid()
+
+    @staticmethod
+    def contrast(x: torch.Tensor) -> torch.Tensor:
+        # cal stdv
+        mean = x.sum(3, keepdim=True).sum(2, keepdim=True) / (x.size(2) * x.size(3))
+        var = (x - mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (x.size(2) * x.size(3))
+        stdv = var.pow(0.5)
+        # cal pool
+        pool = f.adaptive_avg_pool2d(x, 1)
+        return pool + stdv
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x * torch.sigmoid(self.C(self.HW(x)))
-
-
-class AFEB(nn.Module):
-    r"""Adaptive Feature Enhancement Module.
-    """
-
-    def __init__(self, planes: int, reduction: int = 16):
-        super(AFEB, self).__init__()
-
-        self.cbam = CBAM(planes, reduction)
-        self.res_scale = nn.Parameter(torch.ones(1))
-        nn.init.constant_(self.res_scale, 0.)
-
-    def forward(self, x):
-        b, c, h, w = x.size()
-
-        # get higher info
-        low_info = f.adaptive_avg_pool2d(x, (h // 2, w // 2))
-        low_info = f.interpolate(low_info, size=(h, w))
-        high_info = x - low_info
-        higher_info = self.cbam(high_info)
-
-        output = x + higher_info * self.res_scale
-        return output
+        return x * self.sig(self.conv(self.contrast(x)))
 
 
 class ESA(nn.Module):
@@ -251,32 +340,6 @@ class ESA(nn.Module):
         sig_output = torch.sigmoid(tail_output)
 
         return x * sig_output
-
-
-class CCA(nn.Module):
-    r"""Contrast-aware Channel Attention.
-    """
-
-    def __init__(self, planes: int, reduction: int = 16) -> None:
-        super(CCA, self).__init__()
-
-        self.conv = nn.Sequential(Conv2d1x1(planes, planes // reduction),
-                                  nn.ReLU(inplace=True),
-                                  Conv2d1x1(planes // reduction, planes))
-        self.sig = nn.Sigmoid()
-
-    @staticmethod
-    def contrast(x: torch.Tensor) -> torch.Tensor:
-        # cal stdv
-        mean = x.sum(3, keepdim=True).sum(2, keepdim=True) / (x.size(2) * x.size(3))
-        var = (x - mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (x.size(2) * x.size(3))
-        stdv = var.pow(0.5)
-        # cal pool
-        pool = f.adaptive_avg_pool2d(x, 1)
-        return pool + stdv
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x * self.sig(self.conv(self.contrast(x)))
 
 
 if __name__ == '__main__':

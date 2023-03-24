@@ -1,8 +1,31 @@
 # Fried Rice Lab
 
-We will release the code resources of our works here. We have also implemented many useful features and out-of-the-box image restoration models. We hope this will help you in your work.
+We will release code resources for our works here, including:
 
-This repository is mainly built on BasicSR.
+- ESWT [arXiv]
+
+We also implement many useful features, including:
+
+- Allow free combination of different models and tasks with new run commands ([2 Run](#2-run))
+- Analyse the complexity of a specific model on a specific task ([2.3 Analyse](#23-analyse))
+- Interpret super-resolution models using local attribute maps (LAM) ([2.4 Interpret](#24-interpret))
+- Restore your own images using existing models ([2.5 Infer](#25-infer))
+- (New!) Measure representational similarity using minibatch centered kernel alignment ([2.6 CKA](#26-cka))
+- (New!) Calculate mean attention distance of self-attention ([2.7 MAD](#27-mad))
+- (New!) Combine multiple datasets as training set ([Combine Dataset](#combine-dataset))
+- Train/test models with any data flow ([Data Flow](#data-flow))
+- Load LMDB databases in a more customizable way ([LMDB Loading](#lmdn-loading))
+
+And many out-of-the-box image restoration models, including:
+
+- 2017: EDSR [CVPRW]
+- 2018: RCAN [ECCV], RDN [CVPR]
+- 2019: IMDN [ACM MM], RNAN [ICLR]
+- 2020: CSNLN [CVPR], LAPAR [NeurIPS], LatticeNet [ECCV], PAN [ECCV], RFDN [ECCV], SAN [CVPR], HAN [ECCV]
+- 2021: FDIWN [AAAI], HSENet [TGRS], SwinIR [ICCV]
+- 2022: BSRN [CVPRW], ELAN [ECCV], ESRT [CVPRW], LBNet [IJCAI], NAFNet [ECCV], RLFN [CVPRW], SCET [CVPRW]
+
+We hope this repository helps your work.
 
 ## Table of contents
 
@@ -22,7 +45,10 @@ This repository is mainly built on BasicSR.
     - [2.3 Analyse](#23-analyse)
     - [2.4 Interpret](#24-interpret)
     - [2.5 Infer](#25-infer)
+    - [2.6 CKA](#26-cka)
+    - [2.7 MAD](#27-mad)
 - [Useful Features](#useful-features)
+  - [Combine Dataset](#combine-dataset)
   - [Data Flow](#data-flow)
   - [LMDB Loading](#lmdn-loading)
   - [Model Customization](#model-customization)
@@ -35,9 +61,15 @@ This repository is mainly built on BasicSR.
 
 ## FRL News
 
-**23.01.26** Release the code resources of ESWT
+**23.02.05** Preview. We are working on **a new work** on image super-resolution, the performance of which is shown in the figure below. The manuscript and code resources will be released as soon as possible.
 
-**23.01.11** FRL code v2.0 has been released 🎉
+![](docs/figs/preview.png)
+
+**23.01.31** Release the code resources of ESWT 🎉
+
+**23.01.24** Release the manuscript of our new work ESWT on arXiv
+
+**23.01.11** FRL code v2.0 released
 
 **22.11.15** Here we are 🪧
 
@@ -47,11 +79,11 @@ This repository is mainly built on BasicSR.
 
 [Jinpeng Shi](https://github.com/jinpeng-s)*^, Hui Li, [Tianle Liu](https://github.com/TIANLE233), [Yulong Liu](https://github.com/LiuYLong), [Mingjian Zhang](https://github.com/Zhang9317112), [Jinchen Zhu](https://github.com/Jinchen2028), Ling Zheng, Shizhuang Weng^
 
-*Recently, transformer-based methods have made impressive progress in single-image super-resolution (SR). However, these methods are difficult to apply to lightweight SR (LSR) due to the challenge of balancing model performance and complexity. In this paper, we propose an efficient striped window transformer (ESWT). ESWT consists of efficient transformation layers (ETLs), allowing a clean structure and avoiding redundant operations. Moreover, we designed a striped window mechanism to obtain a more efficient ESWT in modeling long-term dependencies. To further exploit the potential of the transformer, we propose a novel flexible window training strategy. Without any additional cost, this strategy can further improve the performance of ESWT. Extensive experiments show that the proposed method outperforms state-of-the-art transformer-based LSR methods with fewer parameters, faster inference, smaller FLOPs, and less memory consumption, achieving a better trade-off between model performance and complexity.* [[More details and reproduction guidance](docs/ESWT.md)]
+*Transformers have achieved remarkable results in single-image super-resolution (SR). However, the challenge of balancing model performance and complexity has hindered their application in lightweight SR (LSR). To tackle this challenge, we propose an efficient striped window transformer (ESWT). We revisit the normalization layer in the transformer and design a concise and efficient transformer structure to build the ESWT. Furthermore, we introduce a striped window mechanism to model long-term dependencies more efficiently. To fully exploit the potential of the ESWT, we propose a novel flexible window training strategy that can improve the performance of the ESWT without additional cost. Extensive experiments show that ESWT outperforms state-of-the-art LSR transformers, and achieves a better trade-off between model performance and complexity. The ESWT requires fewer parameters, incurs faster inference, smaller FLOPs, and less memory consumption, making it a promising solution for LSR.* [[More details and reproduction guidance](docs/ESWT.md)]
 
-> *: First/Co-first author
+> *: (Co-)first author(s)
 >
-> ^: Corresponding author
+> ^: (Co-)corresponding author(s)
 
 ## How to Use
 
@@ -121,7 +153,7 @@ This function will train a specified model.
 python train.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml
 ```
 
-![](figs/train.png)
+![](docs/figs/train.png)
 
 > 🤠 Use the following demo command instead if you prefer to run in CPU mode:
 >
@@ -137,7 +169,7 @@ This function will test the performance of a specified model on a specified task
 python test.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml
 ```
 
-![](figs/test.png)
+![](docs/figs/test.png)
 
 #### 2.3 Analyse
 
@@ -159,9 +191,7 @@ This function will analyze the complexity of a specified model on a specified ta
 python analyse.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml
 ```
 
-![](figs/analyse.png)
-
-> ⚠️ The **#Ave. Time** result of the first dataset is **incorrect** (higher than the real value). We are working on it.
+![](docs/figs/analyse.png)
 
 #### 2.4 Interpret
 
@@ -171,9 +201,9 @@ This function comes from the paper "Interpreting Super-Resolution Networks with 
 python interpret.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml
 ```
 
-![](figs/interpret.png)
+![](docs/figs/interpret.png)
 
-![](figs/lam_result.png)
+![](docs/figs/lam_result.png)
 
 #### 2.5 Infer
 
@@ -183,9 +213,82 @@ You can use this function to restore your own image.
 python infer.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml
 ```
 
-![](figs/infer.png)
+![](docs/figs/infer.png)
+
+#### 2.6 CKA
+
+This function comes from the paper "Do Wide and Deep Networks Learn the Same Things? Uncovering How Neural Network Representations Vary with Width and Depth", which allows you to analyze the feature representation of the SR model.
+
+To get started, use the function `cka.py` to obtain the output of a specified layer type from a specified model.
+
+```shell
+python cka.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml --force_yml hook_layer_type=SABase4D
+```
+
+![cka](docs/figs/cka.png)
+
+Next, employ the script `post_cka.py` to process the previously obtained `pkl` and generate the heat map of representational similarity.
+
+```shell
+python scripts/post_cka.py results/ESWT-24-6_LSR_x4/ESWT-24-6_LSR_x4_DF2K_val_cka.pkl
+```
+
+![cka](docs/figs/cka_result.png)
+
+#### 2.7 MAD
+
+This function calculates the mean attention distance (MAD) of SA layers of a specified model, which is analogous to the receptive field in CNNs.
+
+To get started, use the function `mad.py` to obtain the attention weights of SA layers from a specified model.
+
+```shell
+python mad.py -expe_opt options/repr/ESWT/ESWT-12-12_LSR.yml -task_opt options/task/LSR_x4.yml --force_yml network_g:return_attns=true
+```
+
+![mad](docs/figs/mad.png)
+
+Next, employ the script `post_mad.py` to process the previously obtained `pkl` and generate the line chart.
+
+```shell
+python scripts/post_mad.py results/ESWT-12-12_LSR_x4/ESWT-12-12_LSR_x4_DF2K_val_mad.pkl
+```
+
+![mad_result](docs/figs/mad_result.png)
+
+> ⚠️ Please note that the function `mad.py` only supports **SABase4D** and **square local windows** currently. We will release the code for non-square partial windows later.
+>
 
 ## Useful Features
+
+### Combine Dataset
+
+The FRL code provides a flexible way to combine training datasets using the parameter `extra_datasets`. Here is a demo YML profile:
+
+```yaml
+datasets:
+  train:
+    name: FirstDataset
+    type: IRDataset
+    dataroot_gt: path/to/first/dataset/HR
+    dataroot_lq: path/to/first/dataset/LR
+
+    extra_datasets:
+      extra_0:
+    		name: SecondDataset # Use the type of the first dataset
+    		dataroot_gt: path/to/second/dataset/HR
+    		dataroot_lq: path/to/second/dataset/LR
+
+      extra_1:
+    		name: ThirdDataset # Use the type of the first dataset
+    		dataroot_gt: path/to/third/dataset/HR
+    		dataroot_lq: path/to/third/dataset/LR
+```
+
+This will combine multiple data sets into one training set:
+
+![combine_dataset](docs/figs/combine_dataset.png)
+
+> 🤠 This is a simple way to process the new data set [LSDIR](https://data.vision.ee.ethz.ch/yawli/index.html) (Large Scale Dataset for Image Restoration).
 
 ### Data Flow
 
@@ -290,7 +393,7 @@ python analyse.py -expe_opt options/expe/RFDN/RFDN_LSR.yml -task_opt options/tas
 
 We provide many experimental and task YML configuration files. To perform different experiments, feel **free** to combine them in the command.
 
-> 🤠 If these implementations help your work, please consider citing them.
+> 🤠 If these implementations help your work, please consider citing them. Please refer to file `docs/third_party_works.bib` for more information.
 
 ## Acknowledgements
 

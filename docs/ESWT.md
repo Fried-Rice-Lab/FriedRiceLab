@@ -2,9 +2,9 @@
 
 [Jinpeng Shi](https://github.com/jinpeng-s)*^, Hui Li, [Tianle Liu](https://github.com/TIANLE233), [Yulong Liu](https://github.com/LiuYLong), [Mingjian Zhang](https://github.com/Zhang9317112), [Jinchen Zhu](https://github.com/Jinchen2028), Ling Zheng, Shizhuang Weng^
 
-> *: First/Co-first author
+> *: (Co-)first author(s)
 >
-> ^: Corresponding author
+> ^: (Co-)corresponding author(s)
 
 ## Table of contents
 
@@ -24,11 +24,10 @@
     - [1.2 Dataset](#12-dataset)
     - [1.3 Pretraining Weight](#13-pretraining-weight)
   - [2 Reproduction](#2-reproduction)
-    - [2.1 Table 1 (Main results)](#21-table-1-main-results)
-    - [2.2 Table 2 (Quantitative trade-off comparison between model performance and complexity)](#22-table-2-quantitative-trade-off-comparison-between-model-performance-and-complexity)
-    - [2.3 Table 5 (Ablation study about the impact of window size)](#23-table-5-ablation-study-about-the-impact-of-window-size)
+    - [2.1 Table 4 (Main results)](#21-table-4-main-results)
+    - [2.2 Table 5 (Quantitative trade-off comparison between model performance and complexity)](#22-table-5-quantitative-trade-off-comparison-between-model-performance-and-complexity)
   - [3 Retraining](#3-retraining)
-    - [3.1 ESWT using (24, 6) and (6, 24) striped windows](#31-eswt-using-24-6-and-6-24-striped-windows)
+    - [3.1 ESWT using (24, 6) striped window](#31-eswt-using-24-6-striped-window)
       - [3.1.1 Non-distributed training command (for single GPU)](#311-non-distributed-training-command-for-single-gpu)
       - [3.1.2 Distributed training command (for multiple (e.g., 4) GPUs)](#312-distributed-training-command-for-multiple-eg-4-gpus)
     - [3.2 ESWT using flexible window training strategy](#32-eswt-using-flexible-window-training-strategy)
@@ -43,27 +42,27 @@
 
 ### 1 Abstract
 
-*Recently, transformer-based methods have made impressive progress in single-image super-resolution (SR). However, these methods are difficult to apply to lightweight SR (LSR) due to the challenge of balancing model performance and complexity. In this paper, we propose an efficient striped window transformer (ESWT). ESWT consists of efficient transformation layers (ETLs), allowing a clean structure and avoiding redundant operations. Moreover, we designed a striped window mechanism to obtain a more efficient ESWT in modeling long-term dependencies. To further exploit the potential of the transformer, we propose a novel flexible window training strategy. Without any additional cost, this strategy can further improve the performance of ESWT. Extensive experiments show that the proposed method outperforms state-of-the-art transformer-based LSR methods with fewer parameters, faster inference, smaller FLOPs, and less memory consumption, achieving a better trade-off between model performance and complexity.*
+*Transformers have achieved remarkable results in single-image super-resolution (SR). However, the challenge of balancing model performance and complexity has hindered their application in lightweight SR (LSR). To tackle this challenge, we propose an efficient striped window transformer (ESWT). We revisit the normalization layer in the transformer and design a concise and efficient transformer structure to build the ESWT. Furthermore, we introduce a striped window mechanism to model long-term dependencies more efficiently. To fully exploit the potential of the ESWT, we propose a novel flexible window training strategy that can improve the performance of the ESWT without additional cost. Extensive experiments show that ESWT outperforms state-of-the-art LSR transformers, and achieves a better trade-off between model performance and complexity. The ESWT requires fewer parameters, incurs faster inference, smaller FLOPs, and less memory consumption, making it a promising solution for LSR.*
 
 ### 2 Methodology
 
 #### 2.1 Model Design
 
-![](../figs/ESWT/eswt_f2.png)
+![](figs/ESWT/eswt_f2.png)
 
 #### 2.2 Striped Window Mechanism
 
-![](../figs/ESWT/eswt_f5.png)
+![](figs/ESWT/eswt_f3.png)
 
 ### 3. Experiments
 
 #### 3.1 Trade-off between Model Performance and Complexity
 
-![](../figs/ESWT/eswt_f1.png)
+![](figs/ESWT/eswt_f1.png)
 
 #### 3.2 Visualization Results
 
-![](../figs/ESWT/eswt_f6.png)
+![](figs/ESWT/eswt_f6.png)
 
 ## Reproduction Guidance
 
@@ -97,11 +96,10 @@ Please download the following dataset from our [OneDrive](https://1drv.ms/u/s!Aq
 
 Please download the following pretraining weights from our [OneDrive](https://1drv.ms/u/s!AqKlMh-sml1mw362MfEjdr7orzds?e=budrUU) and place the downloaded pretraining weights in the folder `modelzoo`. **Keep** the local folder `modelzoo` in the same directory tree as the OneDrive folder `modelzoo`.
 
-| Pretraining Weight | Description                                    |
-| ------------------ | ---------------------------------------------- |
-| ESWT-24-6_LSR_x4   | ESWT using (24, 6) and (6, 24) striped windows |
-| ESWT-12-12_LSR_x4  | ESWT using (12, 12) window                     |
-| ESWT-fw_LSR_x4     | ESWT using flexible window training strategy   |
+| Pretraining Weight | Description                        |
+|--------------------|------------------------------------|
+| ESWT-12-12_LSR_x4  | ESWT using (12, 12) striped window |
+| ESWT-24-6_LSR_x4   | ESWT using (24, 6) striped window  |
 
 ### 2 Reproduction
 
@@ -109,10 +107,10 @@ Please use the commands we provide to reproduce the experimental results in the 
 
 You may need to make some **manual changes** to file `options/task/LSR_x4.yml`, such as uncommenting certain lines.
 
-#### 2.1 Table 1 (Main results)
+#### 2.1 Table 4 (Main results)
 
 ```shell
-# ESWT using (24, 6) and (6, 24) striped windows
+# ESWT using (24, 6) striped window
 python test.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml
 ```
 
@@ -128,25 +126,15 @@ python test.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/t
 > python test.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml --force_yml num_gpu=0
 > ```
 
-![](../figs/ESWT/eswt_t1.png)
+![](figs/ESWT/eswt_t4.png)
 
-#### 2.2 Table 2 (Quantitative trade-off comparison between model performance and complexity)
+#### 2.2 Table 5 (Quantitative trade-off comparison between model performance and complexity)
 
 ```shell
-# RFDN-L
-python analyse.py -expe_opt options/expe/RFDN/RFDN-L_LSR.yml -task_opt options/task/LSR_x4.yml
-# LAPAR-A
-python analyse.py -expe_opt options/expe/LAPAR/LAPAR-A_LSR.yml -task_opt options/task/LSR_x4.yml
-# LatticeNet
-python analyse.py -expe_opt options/expe/LatticeNet/LatticeNet_LSR.yml -task_opt options/task/LSR_x4.yml
-# FDIWN
-python analyse.py -expe_opt options/expe/FDIWN/FDIWN_LSR.yml -task_opt options/task/LSR_x4.yml
-
 # ESRT
 python analyse.py -expe_opt options/expe/ESRT/ESRT_LSR.yml -task_opt options/task/LSR_x4.yml
 # LBNet
 python analyse.py -expe_opt options/expe/LBNet/LBNet-T_LSR.yml -task_opt options/task/LSR_x4.yml
-
 # SwinIR
 python analyse.py -expe_opt options/expe/SwinIR/SwinIR_LSR.yml -task_opt options/task/LSR_x4.yml
 # ELAN-light
@@ -155,27 +143,16 @@ python analyse.py -expe_opt options/expe/ELAN/ELAN_LSR.yml -task_opt options/tas
 python analyse.py -expe_opt options/repr/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml
 ```
 
-![](../figs/ESWT/eswt_t2.png)
-
-#### 2.3 Table 5 (Ablation study about the impact of window size)
-
-```shell
-# ESWT using (12, 12) window
-python test.py -expe_opt options/repr/ESWT/ESWT-12-12_LSR.yml -task_opt options/task/LSR_x4.yml
-# ESWT using flexible window training strategy
-python test.py -expe_opt options/repr/ESWT/ESWT-fw_LSR.yml -task_opt options/task/LSR_x4.yml
-```
-
-![](../figs/ESWT/eswt_t5.png)
+![](figs/ESWT/eswt_t5.png)
 
 ### 3 Retraining
 
-#### 3.1 ESWT using (24, 6) and (6, 24) striped windows
+#### 3.1 ESWT using (24, 6) striped window
 
 ##### 3.1.1 Non-distributed training command (for single GPU)
 
 ```shell
-python train.py -expe_opt options/expe/ESWT/ESWT-24-6_LSR.yml -task_opt options/task/LSR_x4.yml
+python train.py -expe_opt options/expe/ESWT/ESWT_LSR.yml -task_opt options/task/LSR_x4.yml
 ```
 
 ##### 3.1.2 Distributed training command (for multiple (e.g., 4) GPUs)

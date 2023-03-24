@@ -1,3 +1,8 @@
+# --------------------------------------------------------------------------------
+# Infer your own images on a specified model on a specified task.
+#
+# Implemented by Jinpeng Shi (https://github.com/jinpeng-s)
+# --------------------------------------------------------------------------------
 import logging
 from os import path as osp
 
@@ -30,8 +35,10 @@ def infer_pipeline(root_path):
     # create infer dataset and dataloader
     infer_loaders = []
     for _, dataset_opt in sorted(opt['infer_datasets'].items()):
-        dataset_opt['phase'], dataset_opt['dataroot_lq'] = 'val', dataset_opt['dataroot_gt']  # fix it
+        dataset_opt['dataroot_lq'] = dataset_opt['dataroot_gt']  # fix it
+        dataset_opt['phase'] = 'val'
         dataset_opt['bit'] = opt['bit']
+        dataset_opt['scale'] = opt['scale']
         infer_set = build_dataset(dataset_opt)
         infer_loader = build_dataloader(
             infer_set, dataset_opt, num_gpu=opt['num_gpu'], dist=opt['dist'], sampler=None, seed=opt['manual_seed'])

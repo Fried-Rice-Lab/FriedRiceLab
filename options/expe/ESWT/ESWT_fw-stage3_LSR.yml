@@ -1,5 +1,5 @@
 # general settings #####################################################################################################
-name: ESWT-fw
+name: ESWT-fw-3
 model_type: IRModel
 num_gpu: 1  # 0 for cpu mode
 manual_seed: 42
@@ -14,8 +14,8 @@ network_g:
   n_g: 3
   dim: 60
   num_heads: 1
-  window_list: !!python/tuple [ [36, 4], [4, 36] ]
-  shift_list: !!python/tuple [ [18, 2], [2, 18] ]
+  window_list: !!python/tuple [ [24, 6], [6, 24] ]
+  shift_list: !!python/tuple [ [12, 3], [3, 12] ]
 
 
 # path #################################################################################################################
@@ -35,7 +35,7 @@ train:
   # optimizer setting
   optim_g:
     type: Adam
-    lr: !!float 5e-5
+    lr: !!float 1e-4
     weight_decay: 0
     betas: [ 0.9, 0.999 ]
 

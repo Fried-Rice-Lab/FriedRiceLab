@@ -1,0 +1,372 @@
+# --------------------------------------------------------------------------------
+# Basic experiment YML file of Remote Sensing Super-Resolution.
+#
+# Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
+# --------------------------------------------------------------------------------
+
+
+# general settings #####################################################################################################
+task_name: RSSR_x4
+scale: 4
+num_in_ch: 3
+num_out_ch: 3
+task: csr
+hook_layer_type: Conv2d
+
+
+# dataset and data loader settings #####################################################################################
+datasets:
+  train:
+    name: AID_train
+    type: IRDataset
+    dataroot_gt: datasets/rssr_data/AID/HR/x4
+    dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+    meta_info_file: datasets/meta_info/AID_train_9990_disk.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+
+    use_hflip: true
+    use_rot: true
+
+    # data loader
+    use_shuffle: true
+    num_worker_per_gpu: 4
+    dataset_enlarge_ratio: 100
+    prefetch_mode: ~
+
+
+# val datasets #########################################################################################################
+  val_0:
+    name: AID_val
+    type: IRDataset
+    dataroot_gt: datasets/rssr_data/AID/HR/x4
+    dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+    meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+
+
+# test datasets ########################################################################################################
+test_datasets:
+  test_0: # demo dataset
+    name: Demo_Set5
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x4
+    io_backend:
+      type: disk
+
+#  rsscn_1:
+#    name: RSSCN7_Field
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/RSSCN7_Field/HR/x4
+#    dataroot_lq: datasets/rmsr_data/RSSCN7_Field/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  rsscn_2:
+#    name: RSSCN7_Forest
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/RSSCN7_Forest/HR/x4
+#    dataroot_lq: datasets/rmsr_data/RSSCN7_Forest/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  rsscn_3:
+#    name: RSSCN7_Grass
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/RSSCN7_Grass/HR/x4
+#    dataroot_lq: datasets/rmsr_data/RSSCN7_Grass/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  rsscn_4:
+#    name: RSSCN7_Industry
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/RSSCN7_Industry/HR/x4
+#    dataroot_lq: datasets/rmsr_data/RSSCN7_Industry/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  rsscn_5:
+#    name: RSSCN7_Parking
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/RSSCN7_Parking/HR/x4
+#    dataroot_lq: datasets/rmsr_data/RSSCN7_Parking/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  rsscn_6:
+#    name: RSSCN7_Resident
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/RSSCN7_Resident/HR/x4
+#    dataroot_lq: datasets/rmsr_data/RSSCN7_Resident/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  rsscn_7:
+#    name: RSSCN7_RiverLake
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/RSSCN7_RiverLake/HR/x4
+#    dataroot_lq: datasets/rmsr_data/RSSCN7_RiverLake/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_1:
+#    name: UCM_agricultural
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_agricultural/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_agricultural/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_2:
+#    name: UCM_airplane
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_airplane/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_airplane/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_3:
+#    name: UCM_baseballdiamond
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_baseballdiamond/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_baseballdiamond/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_4:
+#    name: UCM_beach
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_beach/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_beach/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_5:
+#    name: UCM_buildings
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_buildings/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_buildings/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_6:
+#    name: UCM_chaparral
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_chaparral/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_chaparral/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_7:
+#    name: UCM_denseresidential
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_denseresidential/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_denseresidential/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_8:
+#    name: UCM_forest
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_forest/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_forest/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_9:
+#    name: UCM_freeway
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_freeway/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_freeway/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_10:
+#    name: UCM_golfcourse
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_golfcourse/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_golfcourse/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_11:
+#    name: UCM_harbor
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_harbor/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_harbor/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_12:
+#    name: UCM_intersection
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_intersection/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_intersection/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_13:
+#    name: UCM_mediumresidential
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_mediumresidential/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_mediumresidential/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_14:
+#    name: UCM_mobilehomepark
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_mobilehomepark/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_mobilehomepark/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_15:
+#    name: UCM_overpass
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_overpass/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_overpass/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_16:
+#    name: UCM_parkinglot
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_parkinglot/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_parkinglot/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_17:
+#    name: UCM_river
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_river/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_river/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_18:
+#    name: UCM_runway
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_runway/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_runway/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_19:
+#    name: UCM_sparseresidential
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_sparseresidential/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_sparseresidential/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_20:
+#    name: UCM_storagetanks
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_storagetanks/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_storagetanks/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_21:
+#    name: UCM_tenniscourt
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_tenniscourt/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_tenniscourt/LRBI/x4
+#    io_backend:
+#      type: disk
+
+
+# analyse datasets #####################################################################################################
+analyse_datasets:
+  analyse_0: # demo dataset
+    name: Demo_Set5
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x4
+    io_backend:
+      type: disk
+
+#  rsscn_7:
+#    name: RSSCN7_RiverLake
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/RSSCN7_RiverLake/HR/x4
+#    dataroot_lq: datasets/rmsr_data/RSSCN7_RiverLake/LRBI/x4
+#    io_backend:
+#      type: disk
+
+#  ucm_21:
+#    name: UCM_tenniscourt
+#    type: IRDataset
+#    dataroot_gt: datasets/rmsr_data/UCM_tenniscourt/HR/x4
+#    dataroot_lq: datasets/rmsr_data/UCM_tenniscourt/LRBI/x4
+#    io_backend:
+#      type: disk
+
+
+# infer datasets #######################################################################################################
+infer_datasets:
+  infer_0: # demo dataset
+    name: Set5_GT
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    io_backend:
+      type: disk
+
+
+# cka datasets #########################################################################################################
+cka_datasets:
+  cka_0:
+    name: AID_val
+    type: IRDataset
+    dataroot_gt: datasets/rssr_data/AID/HR/x4
+    dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+    meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    input_size: 288
+
+
+# mad datasets #########################################################################################################
+mad_datasets:
+  mad_0:
+    name: AID_val
+    type: IRDataset
+    dataroot_gt: datasets/rssr_data/AID/HR/x4
+    dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+    meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    input_size: 288
+
+
+# interpret imgs #######################################################################################################
+interpret_imgs:
+  img_0:
+    img_path: datasets/demo_data/Urban7/7.png
+    w: 110
+    h: 150
+
+
+# logging settings #####################################################################################################
+logger:
+  print_freq: 1000
+  save_checkpoint_freq: 1000
+  use_tb_logger: false
+  wandb:
+    project: ~
+    resume_id: ~
+
+
+# dist training settings ###############################################################################################
+dist_params:
+  backend: nccl
+  port: 4000

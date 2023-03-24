@@ -1,3 +1,16 @@
+# --------------------------------------------------------------------------------
+# Analyze the complexity of a specified model on a specified task.
+# Including the following metrics:
+#     - **#Params**: total number of learnable parameters
+#     - **#FLOPs**: abbreviation of floating point operations
+#     - **#Acts**: number of elements of all outputs of convolutional layers
+#     - **#Conv**: number of convolutional layers
+#     - **#Memory**: maximum GPU memory consumption when inferring a dataset
+#     - **#Ave. Time**: average inference time per image in a dataset
+# Official GitHub: https://github.com/ofsoundof/NTIRE2022_ESR
+#
+# Modified by Jinpeng Shi (https://github.com/jinpeng-s)
+# --------------------------------------------------------------------------------
 import logging
 from os import path as osp
 
@@ -10,8 +23,7 @@ from basicsr.utils.options import dict2str
 import archs  # noqa
 import data  # noqa
 import models  # noqa
-from tools.analyse_tool import get_model_flops, get_model_activation
-from utils import parse_options, make_exp_dirs
+from utils import parse_options, make_exp_dirs, get_model_flops, get_model_activation
 
 
 def analyse_pipeline(root_path, img_size: tuple = (3, 256, 256)):  # noqa
@@ -34,6 +46,7 @@ def analyse_pipeline(root_path, img_size: tuple = (3, 256, 256)):  # noqa
     for _, dataset_opt in sorted(opt['analyse_datasets'].items()):
         dataset_opt['phase'] = 'val'
         dataset_opt['bit'] = opt['bit']
+        dataset_opt['scale'] = opt['scale']
         analyse_set = build_dataset(dataset_opt)
         analyse_loader = build_dataloader(
             analyse_set, dataset_opt, num_gpu=opt['num_gpu'], dist=opt['dist'], sampler=None, seed=opt['manual_seed'])
@@ -56,6 +69,12 @@ def analyse_pipeline(root_path, img_size: tuple = (3, 256, 256)):  # noqa
     acts, conv = get_model_activation(model.net_g, img_size)
     logger.info(f"#Acts [M]: {acts / 10 ** 6}")
     logger.info(f"#Conv: {conv}")
+
+    # The #Ave. Time result of the first dataset is **incorrect** (higher than the real value).
+    # Just infer the first dataset **twice** to get the correct results
+    for analyse_loader in [analyse_loaders[0]]:
+        torch.cuda.reset_peak_memory_stats()
+        _, _ = model.nondist_analysis(analyse_loader)
 
     # analyse Ave. Time and GPU Mem.
     for analyse_loader in analyse_loaders:

@@ -138,7 +138,7 @@ function [mssim, ssim_map] = ssim_index(img1, img2, K, window, L)
     %Input : (1) img1: the first image being compared
     %        (2) img2: the second image being compared
     %        (3) K: constants in the SSIM index formula (see the above
-    %            reference). defualt value: K = [0.01 0.03]
+    %            reference). default value: K = [0.01 0.03]
     %        (4) window: local window for statistics (see the above
     %            reference). default widnow is Gaussian given by
     %            window = fspecial('gaussian', 11, 1.5);
