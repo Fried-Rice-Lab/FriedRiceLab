@@ -8,7 +8,7 @@ bit: 8 # data type
 
 # network structure ####################################################################################################
 network_g:
-  type: MAN-light
+  type: MAN
   n_feats: 60
   n_resblocks: 24
 

@@ -161,7 +161,7 @@ class ResGroup(nn.Module):
         return x
 
 
-# @ARCH_REGISTRY.register()
+@ARCH_REGISTRY.register()
 class MAN(nn.Module):
     r"""Multi-scale Attention Network.
 
