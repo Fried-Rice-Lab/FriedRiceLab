@@ -1,8 +1,6 @@
 # ----------------------------------------------------------------------
 # re parameterize for FMEN
 # Official GitHub: https://github.com/NJU-Jet/FMEN
-#
-# Modified by Tianle Liu (tianle.l@outlook.com)
 # ----------------------------------------------------------------------
 from argparse import ArgumentParser
 
