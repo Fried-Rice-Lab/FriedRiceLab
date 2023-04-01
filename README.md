@@ -24,7 +24,7 @@ And many out-of-the-box image restoration models, including:
 - 2020: CSNLN [CVPR], LAPAR [NeurIPS], LatticeNet [ECCV], PAN [ECCV], RFDN [ECCV], SAN [CVPR], HAN [ECCV]
 - 2021: FDIWN [AAAI], HSENet [TGRS], SwinIR [ICCV]
 - 2022: BSRN [CVPRW], ELAN [ECCV], ESRT [CVPRW], LBNet [IJCAI], NAFNet [ECCV], RLFN [CVPRW], SCET [CVPRW],
-        MAN [ARXIV], ShuffleMixer [NeurIPS], FMEN [CVPRW], HNCT[CVPRW], EFDN[CVPRW]
+        MAN [ARXIV], ShuffleMixer [NeurIPS], FMEN [CVPRW], HNCT[CVPRW], EFDN[CVPRW], vapSR[ECCVW]
 
 We hope this repository helps your work.
 
