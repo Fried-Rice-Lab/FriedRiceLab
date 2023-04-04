@@ -15,7 +15,7 @@ import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
 
-sys.path.append('D:/githubclone/FriedRiceLab/')  # Change to the current project address
+sys.path.append('..')  # Change to the current project address
 from archs.efdn_arch import EFDN
 
 parser = argparse.ArgumentParser(description='EFDN Conversion')
