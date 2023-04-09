@@ -1,14 +1,18 @@
 # ----------------------------------------------------------------------
 # re parameterize for FMEN
 # Official GitHub: https://github.com/NJU-Jet/FMEN
+#
+# Modified by Tianle Liu (tianle.l@outlook.com)
 # ----------------------------------------------------------------------
-from argparse import ArgumentParser
+import argparse
+import sys
 
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from archs import fmen_arch
+sys.path.append('./')
+from archs.fmen_arch import FMEN
 
 
 def merge_bn(w, b, gamma, beta, mean, var, eps, before_conv=True):
@@ -51,12 +55,15 @@ def bn_parameter(pretrain_state_dict, k, dst='bn1'):
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser()
-    parser.add_argument('--pretrained_path', type=str, required=True)
+    parser = argparse.ArgumentParser(description='FMEN Conversion')
+    parser.add_argument('load', metavar='LOAD', help='path to the weights file')
+    parser.add_argument('save', metavar='SAVE', help='path to the weights file')
+    parser.add_argument('-a', '--arch', metavar='ARCH', default='FMEN')
     args = parser.parse_args()
-    model = fmen_arch.make_model().cuda()
+
+    model = FMEN(upscale=4, num_in_ch=3, num_out_ch=3, task='lsr', up_blocks=[2, 1, 1, 1, 1], deploy=True)
     rep_state_dict = model.state_dict()
-    pretrain_state_dict = torch.load(args.pretrained_path, map_location='cuda')
+    pretrain_state_dict = torch.load(args.load, map_location='cuda')['params']
 
     for k, v in tqdm(rep_state_dict.items()):
         # merge conv1x1-conv3x3-conv1x1 
@@ -131,5 +138,13 @@ if __name__ == '__main__':
         else:
             raise NotImplementedError('{} is not found in pretrain_state_dict.'.format(k))
 
-    torch.save(rep_state_dict, 'test.pt')
+    save_dict = {}
+    state_dict = rep_state_dict
+    for key, param in state_dict.items():
+        if key.startswith('module.'):
+            key = key[7:]
+        state_dict[key] = param.cpu()
+    save_dict['params'] = state_dict
+
+    torch.save(save_dict, args.save)
     print('Reparameterize successfully!')

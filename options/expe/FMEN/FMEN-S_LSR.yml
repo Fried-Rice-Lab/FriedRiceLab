@@ -9,13 +9,13 @@ bit: 8 # data type
 # network structure ####################################################################################################
 network_g:
   type: FMEN
-  up_blocks: (2, 1, 1, 1, 1)
+  up_blocks: [2, 1, 1, 1, 1]
   down_blocks: 4
   n_feats: 50
   mid_feats: 16
   backbone_expand_ratio: 2
   attention_expand_ratio: 2
-  mode: 'train'
+  deploy: False
 
 
 # path #################################################################################################################
