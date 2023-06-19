@@ -7,6 +7,11 @@
 /ESWT/*
 !/ESWT/ESWT-24-6_LSR_x4.pth
 
+!/EMT
+/EMT/*
+!/EMT/EMT_LSR_x3.pth
+!/EMT/EMT_LSR_x4.pth
+
 !/LAPAR
 /LAPAR/*
 !/LAPAR/kernel
