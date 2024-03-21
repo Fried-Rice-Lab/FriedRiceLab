@@ -11,3 +11,6 @@ python infer.py -expe_opt options/repr/LAPAR/LAPAR-C_LSR.yml -task_opt options/t
 
 # BSRN
 python infer.py -expe_opt options/repr/BSRN/BSRN_LSR.yml -task_opt options/task/RSSR_x4.yml
+
+# LBNet
+python infer.py -expe_opt options/repr/LBNet/LBNet-T_LSR.yml -task_opt options/task/RSSR_x4.yml

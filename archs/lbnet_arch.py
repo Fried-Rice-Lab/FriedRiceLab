@@ -311,9 +311,10 @@ class LBNet(nn.Module):
         self.c2 = default_conv(n_feat, n_feat, 3)
         self.c3 = default_conv(n_feat, n_feat, 3)
 
+        scale = upscale
         modules_tail = [
-            Upsampler(upscale=upscale, in_channels=n_feat,
-                      out_channels=num_out_ch, upsample_mode=task)
+            conv(n_feat, scale * scale * 3, 3),
+            nn.PixelShuffle(scale),
         ]
         self.tail = nn.Sequential(*modules_tail)
 

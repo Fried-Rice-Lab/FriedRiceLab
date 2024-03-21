@@ -48,7 +48,7 @@ class IRModel(_BaseModel):
         # load pretrained models
         load_path = self.opt['path'].get('pretrain_network_g', None)
         if load_path is not None:
-            if self.opt['name'] == "LAPAR-A_RSSR_x4" or self.opt['name'] == "LAPAR-B_RSSR_x4" or self.opt['name'] == "LAPAR-C_RSSR_x4" or self.opt['name'] == "HNCT_RSSR_x4" or self.opt['name'] == "FDIWN_RSSR_x4":
+            if self.opt['name'] == "LAPAR-A_RSSR_x4" or self.opt['name'] == "LAPAR-B_RSSR_x4" or self.opt['name'] == "LAPAR-C_RSSR_x4" or self.opt['name'] == "HNCT_RSSR_x4" or self.opt['name'] == "FDIWN_RSSR_x4" or self.opt['name'] == "LBNet-T_RSSR_x4":
                 param_key = None
             else:
                 param_key = self.opt['path'].get('param_key_g', 'params')
