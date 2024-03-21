@@ -281,33 +281,33 @@ test_datasets:
     dataroot_lq: datasets/rssr_data/UCM_tenniscourt/LRBI/x2
     io_backend:
       type: disk
- 
- 
- nalyse datasets #####################################################################################################
- lyse_datasets:
- nalyse_0: # demo dataset
-  name: Demo_Set5
-  type: IRDataset
-  dataroot_gt: datasets/demo_data/Demo_Set5/HR/x2
-  dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x2
-  io_backend:
-    type: disk
- 
- rsscn_7:
-   name: RSSCN7_RiverLake
-   type: IRDataset
-   dataroot_gt: datasets/rssr_data/RSSCN7_RiverLake/HR/x2
-   dataroot_lq: datasets/rssr_data/RSSCN7_RiverLake/LRBI/x2
-   io_backend:
-     type: disk
- 
- ucm_21:
-   name: UCM_tenniscourt
-   type: IRDataset
-   dataroot_gt: datasets/rssr_data/UCM_tenniscourt/HR/x2
-   dataroot_lq: datasets/rssr_data/UCM_tenniscourt/LRBI/x2
-   io_backend:
-     type: disk
+
+
+# analyse datasets #####################################################################################################
+analyse_datasets:
+  analyse_0: # demo dataset
+    name: Demo_Set5
+    type: IRDataset
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x2
+    dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x2
+    io_backend:
+      type: disk
+
+#  rsscn_7:
+#    name: RSSCN7_RiverLake
+#    type: IRDataset
+#    dataroot_gt: datasets/rssr_data/RSSCN7_RiverLake/HR/x2
+#    dataroot_lq: datasets/rssr_data/RSSCN7_RiverLake/LRBI/x2
+#    io_backend:
+#      type: disk
+
+#  ucm_21:
+#    name: UCM_tenniscourt
+#    type: IRDataset
+#    dataroot_gt: datasets/rssr_data/UCM_tenniscourt/HR/x2
+#    dataroot_lq: datasets/rssr_data/UCM_tenniscourt/LRBI/x2
+#    io_backend:
+#      type: disk
 
 
 # infer datasets #######################################################################################################
@@ -315,7 +315,7 @@ infer_datasets:
   infer_0: # demo dataset
     name: Set5_GT
     type: IRDataset
-    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+    dataroot_gt: datasets/demo_data/Demo_Set5/HR/x2
     io_backend:
       type: disk
 
