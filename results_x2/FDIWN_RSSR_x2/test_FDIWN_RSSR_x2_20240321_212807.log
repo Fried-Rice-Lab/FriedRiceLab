@@ -1,0 +1,575 @@
+2024-03-21 21:28:08,003 INFO: 
+                ____                _       _____  ____
+               / __ ) ____ _ _____ (_)_____/ ___/ / __ \
+              / __  |/ __ `// ___// // ___/\__ \ / /_/ /
+             / /_/ // /_/ /(__  )/ // /__ ___/ // _, _/
+            /_____/ \__,_//____//_/ \___//____//_/ |_|
+     ______                   __   __                 __      __
+    / ____/____   ____   ____/ /  / /   __  __ _____ / /__   / /
+   / / __ / __ \ / __ \ / __  /  / /   / / / // ___// //_/  / /
+  / /_/ // /_/ // /_/ // /_/ /  / /___/ /_/ // /__ / /<    /_/
+  \____/ \____/ \____/ \____/  /_____/\____/ \___//_/|_|  (_)
+    
+Version Information: 
+	BasicSR: 1.4.2
+	PyTorch: 1.9.0
+	TorchVision: 0.10.0
+2024-03-21 21:28:08,003 INFO: 
+  name: FDIWN_RSSR_x2
+  model_type: IRModel
+  num_gpu: 1
+  manual_seed: 42
+  bit: 8
+  network_g:[
+    type: MODEL
+    planes: 64
+    upscale: 2
+    num_in_ch: 3
+    num_out_ch: 3
+    task: lsr
+  ]
+  path:[
+    pretrain_network_g: modelzoo/FDIWN/FDIWN_LSR_x2.pth
+    strict_load_g: True
+    resume_state: None
+    results_root: /home/sjp/FriedRiceLab/results/FDIWN_RSSR_x2
+    log: /home/sjp/FriedRiceLab/results/FDIWN_RSSR_x2
+    visualization: /home/sjp/FriedRiceLab/results/FDIWN_RSSR_x2/visualization
+  ]
+  train:[
+    gt_size: 256
+    batch_size_per_gpu: 64
+    total_iter: 1000000
+    optim_g:[
+      type: Adam
+      lr: 0.0005
+      weight_decay: 0
+      betas: [0.9, 0.999]
+    ]
+    scheduler:[
+      type: CosineAnnealingRestartLR
+      periods: [1000000]
+      restart_weights: [1]
+      eta_min: 1e-06
+    ]
+    pixel_opt:[
+      type: L1Loss
+      loss_weight: 1.0
+      reduction: mean
+    ]
+  ]
+  val:[
+    val_freq: 1000
+    save_img: False
+    suffix: None
+    metrics:[
+      psnr:[
+        type: calculate_psnr
+        crop_border: 4
+        test_y_channel: True
+      ]
+      ssim:[
+        type: calculate_ssim
+        crop_border: 4
+        test_y_channel: True
+      ]
+    ]
+  ]
+  task_name: RSSR_x2
+  scale: 2
+  num_in_ch: 3
+  num_out_ch: 3
+  task: lsr
+  hook_layer_type: Conv2d
+  datasets:[
+    train:[
+      name: AID_train
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/AID/HR/x2
+      dataroot_lq: datasets/rssr_data/AID/LRBI/x2
+      meta_info_file: datasets/meta_info/AID_train_9990_disk.txt
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      use_hflip: True
+      use_rot: True
+      use_shuffle: True
+      num_worker_per_gpu: 4
+      dataset_enlarge_ratio: 100
+      prefetch_mode: None
+      phase: train
+      scale: 2
+    ]
+    val_0:[
+      name: AID_val
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/AID/HR/x2
+      dataroot_lq: datasets/rssr_data/AID/LRBI/x2
+      meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      phase: val
+      scale: 2
+    ]
+  ]
+  test_datasets:[
+    ucm_1:[
+      name: UCM_agricultural
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_agricultural/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_agricultural/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_2:[
+      name: UCM_airplane
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_airplane/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_airplane/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_3:[
+      name: UCM_baseballdiamond
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_baseballdiamond/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_baseballdiamond/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_4:[
+      name: UCM_beach
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_beach/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_beach/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_5:[
+      name: UCM_buildings
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_buildings/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_buildings/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_6:[
+      name: UCM_chaparral
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_chaparral/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_chaparral/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_7:[
+      name: UCM_denseresidential
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_denseresidential/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_denseresidential/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_8:[
+      name: UCM_forest
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_forest/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_forest/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_9:[
+      name: UCM_freeway
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_freeway/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_freeway/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_10:[
+      name: UCM_golfcourse
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_golfcourse/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_golfcourse/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_11:[
+      name: UCM_harbor
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_harbor/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_harbor/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_12:[
+      name: UCM_intersection
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_intersection/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_intersection/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_13:[
+      name: UCM_mediumresidential
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_mediumresidential/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_mediumresidential/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_14:[
+      name: UCM_mobilehomepark
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_mobilehomepark/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_mobilehomepark/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_15:[
+      name: UCM_overpass
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_overpass/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_overpass/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_16:[
+      name: UCM_parkinglot
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_parkinglot/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_parkinglot/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_17:[
+      name: UCM_river
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_river/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_river/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_18:[
+      name: UCM_runway
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_runway/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_runway/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_19:[
+      name: UCM_sparseresidential
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_sparseresidential/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_sparseresidential/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_20:[
+      name: UCM_storagetanks
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_storagetanks/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_storagetanks/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_21:[
+      name: UCM_tenniscourt
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_tenniscourt/HR/x2
+      dataroot_lq: datasets/rssr_data/UCM_tenniscourt/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+  ]
+  analyse_datasets:[
+    analyse_0:[
+      name: Demo_Set5
+      type: IRDataset
+      dataroot_gt: datasets/demo_data/Demo_Set5/HR/x2
+      dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+  ]
+  infer_datasets:[
+    infer_0:[
+      name: Set5_GT
+      type: IRDataset
+      dataroot_gt: datasets/demo_data/Demo_Set5/HR/x2
+      io_backend:[
+        type: disk
+      ]
+    ]
+  ]
+  cka_datasets:[
+    cka_0:[
+      name: AID_val
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/AID/HR/x2
+      dataroot_lq: datasets/rssr_data/AID/LRBI/x2
+      meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      input_size: 288
+    ]
+  ]
+  mad_datasets:[
+    mad_0:[
+      name: AID_val
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/AID/HR/x2
+      dataroot_lq: datasets/rssr_data/AID/LRBI/x2
+      meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      input_size: 288
+    ]
+  ]
+  interpret_imgs:[
+    img_0:[
+      img_path: datasets/demo_data/Urban7/7.png
+      w: 110
+      h: 150
+    ]
+  ]
+  logger:[
+    print_freq: 1000
+    save_checkpoint_freq: 1000
+    use_tb_logger: False
+    wandb:[
+      project: None
+      resume_id: None
+    ]
+  ]
+  dist_params:[
+    backend: nccl
+    port: 4000
+  ]
+  dist: False
+  rank: 0
+  world_size: 1
+  auto_resume: False
+  is_train: False
+
+2024-03-21 21:28:08,006 INFO: Dataset [IRDataset] - UCM_agricultural is built.
+2024-03-21 21:28:08,006 INFO: Number of test images in UCM_agricultural: 100
+2024-03-21 21:28:08,009 INFO: Dataset [IRDataset] - UCM_golfcourse is built.
+2024-03-21 21:28:08,009 INFO: Number of test images in UCM_golfcourse: 100
+2024-03-21 21:28:08,012 INFO: Dataset [IRDataset] - UCM_harbor is built.
+2024-03-21 21:28:08,012 INFO: Number of test images in UCM_harbor: 100
+2024-03-21 21:28:08,014 INFO: Dataset [IRDataset] - UCM_intersection is built.
+2024-03-21 21:28:08,014 INFO: Number of test images in UCM_intersection: 100
+2024-03-21 21:28:08,017 INFO: Dataset [IRDataset] - UCM_mediumresidential is built.
+2024-03-21 21:28:08,017 INFO: Number of test images in UCM_mediumresidential: 100
+2024-03-21 21:28:08,020 INFO: Dataset [IRDataset] - UCM_mobilehomepark is built.
+2024-03-21 21:28:08,020 INFO: Number of test images in UCM_mobilehomepark: 100
+2024-03-21 21:28:08,022 INFO: Dataset [IRDataset] - UCM_overpass is built.
+2024-03-21 21:28:08,022 INFO: Number of test images in UCM_overpass: 100
+2024-03-21 21:28:08,025 INFO: Dataset [IRDataset] - UCM_parkinglot is built.
+2024-03-21 21:28:08,025 INFO: Number of test images in UCM_parkinglot: 100
+2024-03-21 21:28:08,027 INFO: Dataset [IRDataset] - UCM_river is built.
+2024-03-21 21:28:08,027 INFO: Number of test images in UCM_river: 100
+2024-03-21 21:28:08,030 INFO: Dataset [IRDataset] - UCM_runway is built.
+2024-03-21 21:28:08,030 INFO: Number of test images in UCM_runway: 100
+2024-03-21 21:28:08,032 INFO: Dataset [IRDataset] - UCM_sparseresidential is built.
+2024-03-21 21:28:08,033 INFO: Number of test images in UCM_sparseresidential: 100
+2024-03-21 21:28:08,035 INFO: Dataset [IRDataset] - UCM_airplane is built.
+2024-03-21 21:28:08,035 INFO: Number of test images in UCM_airplane: 100
+2024-03-21 21:28:08,038 INFO: Dataset [IRDataset] - UCM_storagetanks is built.
+2024-03-21 21:28:08,038 INFO: Number of test images in UCM_storagetanks: 100
+2024-03-21 21:28:08,040 INFO: Dataset [IRDataset] - UCM_tenniscourt is built.
+2024-03-21 21:28:08,040 INFO: Number of test images in UCM_tenniscourt: 100
+2024-03-21 21:28:08,043 INFO: Dataset [IRDataset] - UCM_baseballdiamond is built.
+2024-03-21 21:28:08,043 INFO: Number of test images in UCM_baseballdiamond: 100
+2024-03-21 21:28:08,045 INFO: Dataset [IRDataset] - UCM_beach is built.
+2024-03-21 21:28:08,045 INFO: Number of test images in UCM_beach: 100
+2024-03-21 21:28:08,048 INFO: Dataset [IRDataset] - UCM_buildings is built.
+2024-03-21 21:28:08,048 INFO: Number of test images in UCM_buildings: 100
+2024-03-21 21:28:08,050 INFO: Dataset [IRDataset] - UCM_chaparral is built.
+2024-03-21 21:28:08,051 INFO: Number of test images in UCM_chaparral: 100
+2024-03-21 21:28:08,053 INFO: Dataset [IRDataset] - UCM_denseresidential is built.
+2024-03-21 21:28:08,053 INFO: Number of test images in UCM_denseresidential: 100
+2024-03-21 21:28:08,056 INFO: Dataset [IRDataset] - UCM_forest is built.
+2024-03-21 21:28:08,056 INFO: Number of test images in UCM_forest: 100
+2024-03-21 21:28:08,058 INFO: Dataset [IRDataset] - UCM_freeway is built.
+2024-03-21 21:28:08,058 INFO: Number of test images in UCM_freeway: 100
+2024-03-21 21:28:08,158 INFO: Network [MODEL] is created.
+2024-03-21 21:28:11,885 INFO: Loading MODEL model from modelzoo/FDIWN/FDIWN_LSR_x2.pth, with param key: [None].
+2024-03-21 21:28:13,044 INFO: Model [IRModel] is created.
+2024-03-21 21:28:13,045 INFO: Testing UCM_agricultural...
+2024-03-21 21:28:34,047 INFO: Validation UCM_agricultural
+
+[psnr]   [Current: 35.1501 @ iter FDIWN_RSSR_x2]   [Best: 35.1501 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.904   @ iter FDIWN_RSSR_x2]   [Best: 0.904   @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:28:34,047 INFO: Testing UCM_golfcourse...
+2024-03-21 21:28:56,380 INFO: Validation UCM_golfcourse
+
+[psnr]   [Current: 38.7799 @ iter FDIWN_RSSR_x2]   [Best: 38.7799 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9344  @ iter FDIWN_RSSR_x2]   [Best: 0.9344  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:28:56,380 INFO: Testing UCM_harbor...
+2024-03-21 21:29:22,677 INFO: Validation UCM_harbor
+
+[psnr]   [Current: 34.5622 @ iter FDIWN_RSSR_x2]   [Best: 34.5622 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9679  @ iter FDIWN_RSSR_x2]   [Best: 0.9679  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:29:22,677 INFO: Testing UCM_intersection...
+2024-03-21 21:29:47,737 INFO: Validation UCM_intersection
+
+[psnr]   [Current: 36.0687 @ iter FDIWN_RSSR_x2]   [Best: 36.0687 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9544  @ iter FDIWN_RSSR_x2]   [Best: 0.9544  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:29:47,737 INFO: Testing UCM_mediumresidential...
+2024-03-21 21:30:11,083 INFO: Validation UCM_mediumresidential
+
+[psnr]   [Current: 33.5621 @ iter FDIWN_RSSR_x2]   [Best: 33.5621 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9316  @ iter FDIWN_RSSR_x2]   [Best: 0.9316  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:30:11,084 INFO: Testing UCM_mobilehomepark...
+2024-03-21 21:30:35,520 INFO: Validation UCM_mobilehomepark
+
+[psnr]   [Current: 33.0199 @ iter FDIWN_RSSR_x2]   [Best: 33.0199 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9407  @ iter FDIWN_RSSR_x2]   [Best: 0.9407  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:30:35,520 INFO: Testing UCM_overpass...
+2024-03-21 21:31:01,398 INFO: Validation UCM_overpass
+
+[psnr]   [Current: 34.8542 @ iter FDIWN_RSSR_x2]   [Best: 34.8542 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9319  @ iter FDIWN_RSSR_x2]   [Best: 0.9319  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:31:01,398 INFO: Testing UCM_parkinglot...
+2024-03-21 21:31:24,643 INFO: Validation UCM_parkinglot
+
+[psnr]   [Current: 31.8052 @ iter FDIWN_RSSR_x2]   [Best: 31.8052 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9489  @ iter FDIWN_RSSR_x2]   [Best: 0.9489  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:31:24,643 INFO: Testing UCM_river...
+2024-03-21 21:31:49,296 INFO: Validation UCM_river
+
+[psnr]   [Current: 33.8186 @ iter FDIWN_RSSR_x2]   [Best: 33.8186 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9041  @ iter FDIWN_RSSR_x2]   [Best: 0.9041  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:31:49,296 INFO: Testing UCM_runway...
+2024-03-21 21:32:15,829 INFO: Validation UCM_runway
+
+[psnr]   [Current: 37.5411 @ iter FDIWN_RSSR_x2]   [Best: 37.5411 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9465  @ iter FDIWN_RSSR_x2]   [Best: 0.9465  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:32:15,830 INFO: Testing UCM_sparseresidential...
+2024-03-21 21:32:39,563 INFO: Validation UCM_sparseresidential
+
+[psnr]   [Current: 35.1925 @ iter FDIWN_RSSR_x2]   [Best: 35.1925 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9075  @ iter FDIWN_RSSR_x2]   [Best: 0.9075  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:32:39,563 INFO: Testing UCM_airplane...
+2024-03-21 21:33:05,503 INFO: Validation UCM_airplane
+
+[psnr]   [Current: 37.396  @ iter FDIWN_RSSR_x2]   [Best: 37.396  @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9558  @ iter FDIWN_RSSR_x2]   [Best: 0.9558  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:33:05,503 INFO: Testing UCM_storagetanks...
+2024-03-21 21:33:32,670 INFO: Validation UCM_storagetanks
+
+[psnr]   [Current: 36.4017 @ iter FDIWN_RSSR_x2]   [Best: 36.4017 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9506  @ iter FDIWN_RSSR_x2]   [Best: 0.9506  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:33:32,670 INFO: Testing UCM_tenniscourt...
+2024-03-21 21:33:56,975 INFO: Validation UCM_tenniscourt
+
+[psnr]   [Current: 37.4666 @ iter FDIWN_RSSR_x2]   [Best: 37.4666 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9573  @ iter FDIWN_RSSR_x2]   [Best: 0.9573  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:33:56,975 INFO: Testing UCM_baseballdiamond...
+2024-03-21 21:34:23,342 INFO: Validation UCM_baseballdiamond
+
+[psnr]   [Current: 39.6427 @ iter FDIWN_RSSR_x2]   [Best: 39.6427 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9388  @ iter FDIWN_RSSR_x2]   [Best: 0.9388  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:34:23,342 INFO: Testing UCM_beach...
+2024-03-21 21:34:56,539 INFO: Validation UCM_beach
+
+[psnr]   [Current: 42.3351 @ iter FDIWN_RSSR_x2]   [Best: 42.3351 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9709  @ iter FDIWN_RSSR_x2]   [Best: 0.9709  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:34:56,540 INFO: Testing UCM_buildings...
+2024-03-21 21:35:22,401 INFO: Validation UCM_buildings
+
+[psnr]   [Current: 36.1173 @ iter FDIWN_RSSR_x2]   [Best: 36.1173 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9602  @ iter FDIWN_RSSR_x2]   [Best: 0.9602  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:35:22,401 INFO: Testing UCM_chaparral...
+2024-03-21 21:35:44,672 INFO: Validation UCM_chaparral
+
+[psnr]   [Current: 32.4548 @ iter FDIWN_RSSR_x2]   [Best: 32.4548 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.919   @ iter FDIWN_RSSR_x2]   [Best: 0.919   @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:35:44,672 INFO: Testing UCM_denseresidential...
+2024-03-21 21:36:07,957 INFO: Validation UCM_denseresidential
+
+[psnr]   [Current: 36.1818 @ iter FDIWN_RSSR_x2]   [Best: 36.1818 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9597  @ iter FDIWN_RSSR_x2]   [Best: 0.9597  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:36:07,958 INFO: Testing UCM_forest...
+2024-03-21 21:36:29,723 INFO: Validation UCM_forest
+
+[psnr]   [Current: 34.1583 @ iter FDIWN_RSSR_x2]   [Best: 34.1583 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9076  @ iter FDIWN_RSSR_x2]   [Best: 0.9076  @ iter FDIWN_RSSR_x2]
+
+2024-03-21 21:36:29,723 INFO: Testing UCM_freeway...
+2024-03-21 21:36:53,398 INFO: Validation UCM_freeway
+
+[psnr]   [Current: 37.1439 @ iter FDIWN_RSSR_x2]   [Best: 37.1439 @ iter FDIWN_RSSR_x2]
+
+[ssim]   [Current: 0.9434  @ iter FDIWN_RSSR_x2]   [Best: 0.9434  @ iter FDIWN_RSSR_x2]
+
