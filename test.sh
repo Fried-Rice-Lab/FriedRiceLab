@@ -9,3 +9,8 @@ python test.py -expe_opt options/expe/FDIWN/FDIWN_LSR.yml -task_opt options/task
 
 # HNCT
 python test.py -expe_opt options/expe/HNCT/HNCT_LSR.yml -task_opt options/task/RSSR_x4.yml
+
+# LAPAR
+python test.py -expe_opt options/expe/LAPAR/LAPAR-A_LSR.yml -task_opt options/task/RSSR_x4.yml
+python test.py -expe_opt options/expe/LAPAR/LAPAR-B_LSR.yml -task_opt options/task/RSSR_x4.yml
+python test.py -expe_opt options/expe/LAPAR/LAPAR-C_LSR.yml -task_opt options/task/RSSR_x4.yml
