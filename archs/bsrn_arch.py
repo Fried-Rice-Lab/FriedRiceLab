@@ -1,224 +1,418 @@
-# ---------------------------------------------------------------------------
-# Blueprint Separable Residual Network for Efficient Image Super-Resolution
-# Official GitHub: https://github.com/xiaom233/BSRN
-#
-# Modified by Yulong Liu (yl.liu88@outlook.com)
-# ---------------------------------------------------------------------------
+"""
+This repository is used to implement all upsamplers(only x4) and tools for Efficient SR
+@author
+    LI Zehyuan from SIAT
+    LIU yingqi from SIAT
+"""
+
+from functools import partial
 import torch
 import torch.nn as nn
-import torch.nn.functional as f
+import torch.nn.functional as F
+import math
+import basicsr.archs.Upsamplers as Upsamplers
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, CCA, Upsampler, DWConv2d
+
+class DepthWiseConv(nn.Module):
+    def __init__(
+        self,
+        in_ch,
+        out_ch,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        dilation=1,
+        bias=True,
+        padding_mode="zeros",
+        with_norm=False,
+        bn_kwargs=None,
+    ):
+        super(DepthWiseConv, self).__init__()
+
+        self.dw = torch.nn.Conv2d(
+            in_channels=in_ch,
+            out_channels=in_ch,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=in_ch,
+            bias=bias,
+            padding_mode=padding_mode,
+        )
+
+        self.pw = torch.nn.Conv2d(
+            in_channels=in_ch,
+            out_channels=out_ch,
+            kernel_size=(1, 1),
+            stride=1,
+            padding=0,
+            dilation=1,
+            groups=1,
+            bias=False,
+        )
+
+    def forward(self, input):
+        out = self.dw(input)
+        out = self.pw(out)
+        return out
 
 
-class DWConv2d33(DWConv2d):
-    r"""
-
-    Args:
-        stride(tuple). Default: 1
-
-    """
-
-    def __init__(self, in_channels: int, out_channels: int, stride: tuple = 1,
-                 dilation: tuple = (1, 1), groups: int = None, bias: bool = True,
-                 **kwargs) -> None:
-        super(DWConv2d33, self).__init__(in_channels=in_channels, out_channels=out_channels,
-                                         kernel_size=(3, 3), stride=stride, padding=(1, 1),
-                                         dilation=dilation, groups=groups, bias=bias, **kwargs)
-
-
-class BlueprintSeparableConv(torch.nn.Module):
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: tuple = (3, 3),
-                 stride: tuple = 1, padding: tuple = 1, dilation: tuple = (1, 1), bias: bool = True,
-                 mid_channels: int = None, **kwargs) -> None:
-        super(BlueprintSeparableConv, self).__init__()
+class BSConvU(torch.nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        dilation=1,
+        bias=True,
+        padding_mode="zeros",
+        with_ln=False,
+        bn_kwargs=None,
+    ):
+        super().__init__()
+        self.with_ln = with_ln
+        # check arguments
+        if bn_kwargs is None:
+            bn_kwargs = {}
 
         # pointwise
-        if mid_channels is not None:  # BSConvS
-            self.pw = nn.Sequential(Conv2d1x1(in_channels, mid_channels, bias=False),
-                                    Conv2d1x1(mid_channels, out_channels, bias=False))
-
-        else:  # BSConvU
-            self.pw = Conv2d1x1(in_channels, out_channels, bias=False)
+        self.pw = torch.nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=(1, 1),
+            stride=1,
+            padding=0,
+            dilation=1,
+            groups=1,
+            bias=False,
+        )
 
         # depthwise
-        self.dw = torch.nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=kernel_size,
-                                  stride=stride, padding=padding, dilation=dilation, groups=out_channels,
-                                  bias=bias)
+        self.dw = torch.nn.Conv2d(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=out_channels,
+            bias=bias,
+            padding_mode=padding_mode,
+        )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.dw(self.pw(x))
+    def forward(self, fea):
+        fea = self.pw(fea)
+        fea = self.dw(fea)
+        return fea
 
 
-class BSConv2d33(BlueprintSeparableConv):
-    pass
+class BSConvS(torch.nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        dilation=1,
+        bias=True,
+        padding_mode="zeros",
+        p=0.25,
+        min_mid_channels=4,
+        with_ln=False,
+        bn_kwargs=None,
+    ):
+        super().__init__()
+        self.with_ln = with_ln
+        # check arguments
+        assert 0.0 <= p <= 1.0
+        mid_channels = min(
+            in_channels, max(min_mid_channels, math.ceil(p * in_channels))
+        )
+        if bn_kwargs is None:
+            bn_kwargs = {}
+
+        # pointwise 1
+        self.pw1 = torch.nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=mid_channels,
+            kernel_size=(1, 1),
+            stride=1,
+            padding=0,
+            dilation=1,
+            groups=1,
+            bias=False,
+        )
+
+        # pointwise 2
+        self.add_module(
+            "pw2",
+            torch.nn.Conv2d(
+                in_channels=mid_channels,
+                out_channels=out_channels,
+                kernel_size=(1, 1),
+                stride=1,
+                padding=0,
+                dilation=1,
+                groups=1,
+                bias=False,
+            ),
+        )
+
+        # depthwise
+        self.dw = torch.nn.Conv2d(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=out_channels,
+            bias=bias,
+            padding_mode=padding_mode,
+        )
+
+    def forward(self, x):
+        fea = self.pw1(x)
+        fea = self.pw2(fea)
+        fea = self.dw(fea)
+        return fea
+
+    def _reg_loss(self):
+        W = self[0].weight[:, :, 0, 0]
+        WWt = torch.mm(W, torch.transpose(W, 0, 1))
+        I = torch.eye(WWt.shape[0], device=WWt.device)
+        return torch.norm(WWt - I, p="fro")
+
+
+def stdv_channels(F):
+    assert F.dim() == 4
+    F_mean = mean_channels(F)
+    F_variance = (F - F_mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (
+        F.size(2) * F.size(3)
+    )
+    return F_variance.pow(0.5)
+
+
+def mean_channels(F):
+    assert F.dim() == 4
+    spatial_sum = F.sum(3, keepdim=True).sum(2, keepdim=True)
+    return spatial_sum / (F.size(2) * F.size(3))
+
+
+class CCALayer(nn.Module):
+    def __init__(self, channel, reduction=16):
+        super(CCALayer, self).__init__()
+
+        self.contrast = stdv_channels
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv_du = nn.Sequential(
+            nn.Conv2d(channel, channel // reduction, 1, padding=0, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(channel // reduction, channel, 1, padding=0, bias=True),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        y = self.contrast(x) + self.avg_pool(x)
+        y = self.conv_du(y)
+        return x * y
+
+
+class ChannelAttention(nn.Module):
+    """Channel attention used in RCAN.
+
+    Args:
+        num_feat (int): Channel number of intermediate features.
+        squeeze_factor (int): Channel squeeze factor. Default: 16.
+    """
+
+    def __init__(self, num_feat, squeeze_factor=16):
+        super(ChannelAttention, self).__init__()
+        self.attention = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Conv2d(num_feat, num_feat // squeeze_factor, 1, padding=0),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(num_feat // squeeze_factor, num_feat, 1, padding=0),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        y = self.attention(x)
+        return x * y
 
 
 class ESA(nn.Module):
-    r"""Enhanced Spatial Attention.
-
-    Args:
-        in_channels:
-        planes:
-        num_conv: Number of conv layers in the conv group
-
-    """
-
-    def __init__(self, in_channels, planes: int = None, num_conv: int = 3, conv_layer=Conv2d3x3,
-                 **kwargs) -> None:
+    def __init__(self, num_feat=50, conv=nn.Conv2d, p=0.25):
         super(ESA, self).__init__()
+        f = num_feat // 4
+        BSConvS_kwargs = {}
+        if conv.__name__ == "BSConvS":
+            BSConvS_kwargs = {"p": p}
+        self.conv1 = nn.Conv2d(num_feat, f, 1)
+        self.conv_f = nn.Conv2d(f, f, 1)
+        self.maxPooling = nn.MaxPool2d(kernel_size=7, stride=3)
+        self.conv_max = conv(f, f, kernel_size=3, **BSConvS_kwargs)
+        self.conv2 = conv(f, f, 3, 2, 0)
+        self.conv3 = conv(f, f, kernel_size=3, **BSConvS_kwargs)
+        self.conv3_ = conv(f, f, kernel_size=3, **BSConvS_kwargs)
+        self.conv4 = nn.Conv2d(f, num_feat, 1)
+        self.sigmoid = nn.Sigmoid()
+        self.GELU = nn.GELU()
 
-        planes = planes or in_channels // 4
-        self.head_conv = Conv2d1x1(in_channels, planes)
+    def forward(self, input):
+        c1_ = self.conv1(input)
+        c1 = self.conv2(c1_)
+        v_max = self.maxPooling(c1)
+        v_range = self.GELU(self.conv_max(v_max))
+        c3 = self.GELU(self.conv3(v_range))
+        c3 = self.conv3_(c3)
+        c3 = F.interpolate(
+            c3, (input.size(2), input.size(3)), mode="bilinear", align_corners=False
+        )
+        cf = self.conv_f(c1_)
+        c4 = self.conv4((c3 + cf))
+        m = self.sigmoid(c4)
 
-        self.stride_conv = conv_layer(planes, planes, stride=(2, 2), **kwargs)
-        conv_group = list()
-        for i in range(num_conv):
-            if i != 0:
-                conv_group.append(nn.ReLU(inplace=True))
-            conv_group.append(conv_layer(planes, planes, **kwargs))
-        self.group_conv = nn.Sequential(*conv_group)
-        self.useless_conv = Conv2d1x1(planes, planes)  # maybe nn.Identity()?
-
-        self.tail_conv = Conv2d1x1(planes, in_channels)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Conv-1
-        head_output = self.head_conv(x)
-
-        # Stride Conv
-        stride_output = self.stride_conv(head_output)
-        # Pooling
-        pool_output = f.max_pool2d(stride_output, kernel_size=7, stride=3)
-        # Conv Group
-        group_output = self.group_conv(pool_output)
-        # Upsampling
-        upsample_output = f.interpolate(group_output, (x.size(2), x.size(3)),
-                                        mode='bilinear', align_corners=False)
-
-        # Conv-1
-        tail_output = self.tail_conv(upsample_output + self.useless_conv(head_output))
-        # Sigmoid
-        sig_output = torch.sigmoid(tail_output)
-
-        return x * sig_output
+        return input * m
 
 
 class ESDB(nn.Module):
-    r"""Efficient Separable Distillation Block
-    """
-
-    def __init__(self, planes: int, distillation_rate: float = 0.5, conv_layer=Conv2d3x3,
-                 **kwargs) -> None:
+    def __init__(self, in_channels, out_channels, conv=nn.Conv2d, p=0.25):
         super(ESDB, self).__init__()
+        kwargs = {"padding": 1}
+        if conv.__name__ == "BSConvS":
+            kwargs = {"p": p}
 
-        distilled_channels = int(planes * distillation_rate)
+        self.dc = self.distilled_channels = in_channels // 2
+        self.rc = self.remaining_channels = in_channels
 
-        self.c1_d = Conv2d1x1(planes, distilled_channels)
-        self.c1_r = conv_layer(planes, planes, **kwargs)
+        self.c1_d = nn.Conv2d(in_channels, self.dc, 1)
+        self.c1_r = conv(in_channels, self.rc, kernel_size=3, **kwargs)
+        self.c2_d = nn.Conv2d(self.remaining_channels, self.dc, 1)
+        self.c2_r = conv(self.remaining_channels, self.rc, kernel_size=3, **kwargs)
+        self.c3_d = nn.Conv2d(self.remaining_channels, self.dc, 1)
+        self.c3_r = conv(self.remaining_channels, self.rc, kernel_size=3, **kwargs)
 
-        self.c2_d = Conv2d1x1(planes, distilled_channels)
-        self.c2_r = conv_layer(planes, planes, **kwargs)
-
-        self.c3_d = Conv2d1x1(planes, distilled_channels)
-        self.c3_r = conv_layer(planes, planes, **kwargs)
-
-        self.c4_r = conv_layer(planes, distilled_channels, **kwargs)
-
-        self.c5 = Conv2d1x1(distilled_channels * 4, planes)
-
-        self.cca = CCA(planes)
-        self.esa = ESA(planes, conv_layer=conv_layer, **kwargs)
-
+        self.c4 = conv(self.remaining_channels, self.dc, kernel_size=3, **kwargs)
         self.act = nn.GELU()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        d_c1 = self.act(self.c1_d(x))
-        r_c1 = self.c1_r(x)
-        r_c1 = self.act(x + r_c1)
+        self.c5 = nn.Conv2d(self.dc * 4, in_channels, 1)
+        self.esa = ESA(in_channels, conv)
+        self.cca = CCALayer(in_channels)
 
-        d_c2 = self.act(self.c2_d(r_c1))
+    def forward(self, input):
+        distilled_c1 = self.act(self.c1_d(input))
+        r_c1 = self.c1_r(input)
+        r_c1 = self.act(r_c1 + input)
+
+        distilled_c2 = self.act(self.c2_d(r_c1))
         r_c2 = self.c2_r(r_c1)
-        r_c2 = self.act(r_c1 + r_c2)
+        r_c2 = self.act(r_c2 + r_c1)
 
-        d_c3 = self.act(self.c3_d(r_c2))
+        distilled_c3 = self.act(self.c3_d(r_c2))
         r_c3 = self.c3_r(r_c2)
-        r_c3 = self.act(r_c2 + r_c3)
+        r_c3 = self.act(r_c3 + r_c2)
 
-        r_c4 = self.c4_r(r_c3)
-        r_c4 = self.act(r_c4)
+        r_c4 = self.act(self.c4(r_c3))
 
-        out = torch.cat([d_c1, d_c2, d_c3, r_c4], dim=1)
+        out = torch.cat([distilled_c1, distilled_c2, distilled_c3, r_c4], dim=1)
         out = self.c5(out)
+        out_fused = self.esa(out)
+        out_fused = self.cca(out_fused)
+        return out_fused + input
 
-        out_fused = self.cca(self.esa(out))
 
-        return out_fused + x
+def make_layer(block, n_layers):
+    layers = []
+    for _ in range(n_layers):
+        layers.append(block())
+    return nn.Sequential(*layers)
 
 
 @ARCH_REGISTRY.register()
 class BSRN(nn.Module):
-    r"""Blueprint Separable Residual Network.
-    """
-
-    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
-                 planes: int, num_modules: int, num_times: int,
-                 conv_type: str, mid_channels: int = None) -> None:
+    def __init__(
+        self,
+        num_in_ch=3,
+        num_feat=64,
+        num_block=8,
+        num_out_ch=3,
+        upscale=4,
+        conv="BSConvU",
+        upsampler="pixelshuffledirect",
+        p=0.25,
+    ):
         super(BSRN, self).__init__()
-
-        kwargs = dict()
-        if conv_type == 'bsconv_u':
-            conv_layer = BlueprintSeparableConv
-        elif conv_type == 'bsconv_s':
-            kwargs = {'mid_channel': mid_channels}
-            conv_layer = BlueprintSeparableConv
-        elif conv_type == 'dwconv':
-            conv_layer = DWConv2d33
-        elif conv_type == 'conv':
-            conv_layer = Conv2d3x3
+        kwargs = {"padding": 1}
+        if conv == "BSConvS":
+            kwargs = {"p": p}
+        print(conv)
+        if conv == "DepthWiseConv":
+            self.conv = DepthWiseConv
+        elif conv == "BSConvU":
+            self.conv = BSConvU
+        elif conv == "BSConvS":
+            self.conv = BSConvS
         else:
-            raise NotImplementedError
+            self.conv = nn.Conv2d
+        self.fea_conv = self.conv(num_in_ch * 4, num_feat, kernel_size=3, **kwargs)
 
-        self.num_times = num_times
+        self.B1 = ESDB(in_channels=num_feat, out_channels=num_feat, conv=self.conv, p=p)
+        self.B2 = ESDB(in_channels=num_feat, out_channels=num_feat, conv=self.conv, p=p)
+        self.B3 = ESDB(in_channels=num_feat, out_channels=num_feat, conv=self.conv, p=p)
+        self.B4 = ESDB(in_channels=num_feat, out_channels=num_feat, conv=self.conv, p=p)
+        self.B5 = ESDB(in_channels=num_feat, out_channels=num_feat, conv=self.conv, p=p)
+        self.B6 = ESDB(in_channels=num_feat, out_channels=num_feat, conv=self.conv, p=p)
+        self.B7 = ESDB(in_channels=num_feat, out_channels=num_feat, conv=self.conv, p=p)
+        self.B8 = ESDB(in_channels=num_feat, out_channels=num_feat, conv=self.conv, p=p)
 
-        self.head = conv_layer(num_in_ch * num_times, planes, **kwargs)
+        self.c1 = nn.Conv2d(num_feat * num_block, num_feat, 1)
+        self.GELU = nn.GELU()
 
-        self.body = nn.ModuleList([ESDB(planes, conv_layer=conv_layer, **kwargs)
-                                   for _ in range(num_modules)])
-        self.body_tail = nn.Sequential(Conv2d1x1(planes * num_modules, planes),
-                                       nn.GELU(),
-                                       conv_layer(planes, planes, **kwargs))
+        self.c2 = self.conv(num_feat, num_feat, kernel_size=3, **kwargs)
 
-        self.tail = Upsampler(upscale=upscale, in_channels=planes,
-                              out_channels=num_out_ch, upsample_mode=task)
+        if upsampler == "pixelshuffledirect":
+            self.upsampler = Upsamplers.PixelShuffleDirect(
+                scale=upscale, num_feat=num_feat, num_out_ch=num_out_ch
+            )
+        elif upsampler == "pixelshuffleblock":
+            self.upsampler = Upsamplers.PixelShuffleBlcok(
+                in_feat=num_feat, num_feat=num_feat, num_out_ch=num_out_ch
+            )
+        elif upsampler == "nearestconv":
+            self.upsampler = Upsamplers.NearestConv(
+                in_ch=num_feat, num_feat=num_feat, num_out_ch=num_out_ch
+            )
+        elif upsampler == "pa":
+            self.upsampler = Upsamplers.PA_UP(nf=num_feat, unf=24, out_nc=num_out_ch)
+        else:
+            raise NotImplementedError(("Check the Upsampeler. None or not support yet"))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # head
-        x = torch.cat([x] * self.num_times, dim=1)
-        head_x = self.head(x)
+    def forward(self, input):
+        input = torch.cat([input, input, input, input], dim=1)
+        out_fea = self.fea_conv(input)
+        out_B1 = self.B1(out_fea)
+        out_B2 = self.B2(out_B1)
+        out_B3 = self.B3(out_B2)
+        out_B4 = self.B4(out_B3)
+        out_B5 = self.B5(out_B4)
+        out_B6 = self.B6(out_B5)
+        out_B7 = self.B7(out_B6)
+        out_B8 = self.B8(out_B7)
 
-        # body
-        body_x = head_x
-        output_list = list()
-        for module in self.body:
-            body_x = module(body_x)
-            output_list.append(body_x)
-        body_x = self.body_tail(torch.cat(output_list, dim=1))
-        body_x = body_x + head_x
+        trunk = torch.cat(
+            [out_B1, out_B2, out_B3, out_B4, out_B5, out_B6, out_B7, out_B8], dim=1
+        )
+        out_B = self.c1(trunk)
+        out_B = self.GELU(out_B)
 
-        # tail
-        tail_x = self.tail(body_x)
-        return tail_x
+        out_lr = self.c2(out_B) + out_fea
 
+        output = self.upsampler(out_lr)
 
-if __name__ == '__main__':
-    def count_parameters(model):
-        return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
-    net = BSRN(upscale=4, planes=64, num_modules=8, num_times=4, conv_type='bsconv_s')
-    print(count_parameters(net))
-
-    data = torch.randn(1, 3, 64, 64)
-    print(net(data).size())
+        return output
