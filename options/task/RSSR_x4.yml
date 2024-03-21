@@ -10,7 +10,7 @@ task_name: RSSR_x4
 scale: 4
 num_in_ch: 3
 num_out_ch: 3
-task: csr
+task: lsr
 hook_layer_type: Conv2d
 
 
