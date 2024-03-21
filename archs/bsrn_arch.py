@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-import basicsr.archs.Upsamplers as Upsamplers
+import archs.utils._bsrn as Upsamplers
 from basicsr.utils.registry import ARCH_REGISTRY
 
 
@@ -346,6 +346,8 @@ class BSRN(nn.Module):
         conv="BSConvU",
         upsampler="pixelshuffledirect",
         p=0.25,
+        *args,
+        **kwargs
     ):
         super(BSRN, self).__init__()
         kwargs = {"padding": 1}
