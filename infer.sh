@@ -13,4 +13,8 @@ python test.py -expe_opt options/repr/HNCT/HNCT_LSR.yml -task_opt options/task/R
 # LAPAR
 python test.py -expe_opt options/repr/LAPAR/LAPAR-A_LSR.yml -task_opt options/task/RSSR_x4.yml
 python test.py -expe_opt options/repr/LAPAR/LAPAR-B_LSR.yml -task_opt options/task/RSSR_x4.yml
-python test.py -expe_opt options/repr/LAPA/LAPAR-C_LSR.yml -task_opt options/task/RSSR_x4.yml
+python test.py -expe_opt options/repr/LAPAR/LAPAR-C_LSR.yml -task_opt options/task/RSSR_x4.yml
+
+# BSRN
+python test.py -expe_opt options/repr/BSRN/BSRN_LSR.yml -task_opt options/task/RSSR_x4.yml
+python test.py -expe_opt options/repr/BSRN/BSRN-S_LSR.yml -task_opt options/task/RSSR_x4.yml

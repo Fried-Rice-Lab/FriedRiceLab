@@ -1,5 +1,5 @@
 # general settings #####################################################################################################
-name: ESWT-24-6
+name: ESWT
 model_type: IRModel
 num_gpu: 1  # 0 for cpu mode
 manual_seed: 42

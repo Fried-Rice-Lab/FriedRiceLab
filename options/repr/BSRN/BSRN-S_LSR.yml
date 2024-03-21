@@ -1,23 +1,25 @@
 # general settings #####################################################################################################
-name: BSRN
+name: BSRN-S
 model_type: IRModel
 num_gpu: 1  # 0 for cpu mode
 manual_seed: 42
-bit: 8 # data type
+bit: 0 # data type
 
 
 # network structure ####################################################################################################
 network_g:
-  type: BSRN
-  planes: 64
-  num_modules: 8
-  num_times: 4
-  conv_type: 'bsconv_s'
+  type: RFDNFINALB5
+  num_in_ch: 3
+  num_feat: 48
+  num_block: 5
+  num_out_ch: 3
+  upscale: 4
+  conv: BSConvU
 
 
 # path #################################################################################################################
 path:
-  pretrain_network_g: ~
+  pretrain_network_g: modelzoo/BSRN/BSRN-S_LSR_x4.pth
   strict_load_g: true
   resume_state: ~
 

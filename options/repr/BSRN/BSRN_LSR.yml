@@ -3,7 +3,7 @@ name: BSRN
 model_type: IRModel
 num_gpu: 1  # 0 for cpu mode
 manual_seed: 42
-bit: 8 # data type
+bit: 0 # data type
 
 
 # network structure ####################################################################################################
