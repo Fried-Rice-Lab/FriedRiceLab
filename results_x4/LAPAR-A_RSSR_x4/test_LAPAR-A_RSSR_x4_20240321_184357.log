@@ -1,0 +1,580 @@
+2024-03-21 18:43:57,293 INFO: 
+                ____                _       _____  ____
+               / __ ) ____ _ _____ (_)_____/ ___/ / __ \
+              / __  |/ __ `// ___// // ___/\__ \ / /_/ /
+             / /_/ // /_/ /(__  )/ // /__ ___/ // _, _/
+            /_____/ \__,_//____//_/ \___//____//_/ |_|
+     ______                   __   __                 __      __
+    / ____/____   ____   ____/ /  / /   __  __ _____ / /__   / /
+   / / __ / __ \ / __ \ / __  /  / /   / / / // ___// //_/  / /
+  / /_/ // /_/ // /_/ // /_/ /  / /___/ /_/ // /__ / /<    /_/
+  \____/ \____/ \____/ \____/  /_____/\____/ \___//_/|_|  (_)
+    
+Version Information: 
+	BasicSR: 1.4.2
+	PyTorch: 1.9.0
+	TorchVision: 0.10.0
+2024-03-21 18:43:57,293 INFO: 
+  name: LAPAR-A_RSSR_x4
+  model_type: IRModel
+  num_gpu: 1
+  manual_seed: 42
+  bit: 0
+  network_g:[
+    type: LAPAR
+    kernel_size: 5
+    kernel_path: modelzoo/LAPAR/kernel/kernel_72_k5.pkl
+    in_chl: 3
+    nf: 32
+    n_block: 4
+    out_chl: 72
+    upscale: 4
+    num_in_ch: 3
+    num_out_ch: 3
+    task: lsr
+  ]
+  path:[
+    pretrain_network_g: modelzoo/LAPAR/LAPAR_A_x4.pth
+    strict_load_g: True
+    resume_state: None
+    results_root: /home/sjp/FriedRiceLab/results/LAPAR-A_RSSR_x4
+    log: /home/sjp/FriedRiceLab/results/LAPAR-A_RSSR_x4
+    visualization: /home/sjp/FriedRiceLab/results/LAPAR-A_RSSR_x4/visualization
+  ]
+  train:[
+    gt_size: 256
+    batch_size_per_gpu: 64
+    total_iter: 1000000
+    optim_g:[
+      type: Adam
+      lr: 0.0005
+      weight_decay: 0
+      betas: [0.9, 0.999]
+    ]
+    scheduler:[
+      type: CosineAnnealingRestartLR
+      periods: [1000000]
+      restart_weights: [1]
+      eta_min: 1e-06
+    ]
+    pixel_opt:[
+      type: L1Loss
+      loss_weight: 1.0
+      reduction: mean
+    ]
+  ]
+  val:[
+    val_freq: 1000
+    save_img: False
+    suffix: None
+    metrics:[
+      psnr:[
+        type: calculate_psnr
+        crop_border: 4
+        test_y_channel: True
+      ]
+      ssim:[
+        type: calculate_ssim
+        crop_border: 4
+        test_y_channel: True
+      ]
+    ]
+  ]
+  task_name: RSSR_x4
+  scale: 4
+  num_in_ch: 3
+  num_out_ch: 3
+  task: lsr
+  hook_layer_type: Conv2d
+  datasets:[
+    train:[
+      name: AID_train
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/AID/HR/x4
+      dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+      meta_info_file: datasets/meta_info/AID_train_9990_disk.txt
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      use_hflip: True
+      use_rot: True
+      use_shuffle: True
+      num_worker_per_gpu: 4
+      dataset_enlarge_ratio: 100
+      prefetch_mode: None
+      phase: train
+      scale: 4
+    ]
+    val_0:[
+      name: AID_val
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/AID/HR/x4
+      dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+      meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      phase: val
+      scale: 4
+    ]
+  ]
+  test_datasets:[
+    ucm_1:[
+      name: UCM_agricultural
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_agricultural/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_agricultural/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_2:[
+      name: UCM_airplane
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_airplane/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_airplane/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_3:[
+      name: UCM_baseballdiamond
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_baseballdiamond/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_baseballdiamond/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_4:[
+      name: UCM_beach
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_beach/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_beach/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_5:[
+      name: UCM_buildings
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_buildings/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_buildings/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_6:[
+      name: UCM_chaparral
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_chaparral/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_chaparral/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_7:[
+      name: UCM_denseresidential
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_denseresidential/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_denseresidential/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_8:[
+      name: UCM_forest
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_forest/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_forest/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_9:[
+      name: UCM_freeway
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_freeway/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_freeway/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_10:[
+      name: UCM_golfcourse
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_golfcourse/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_golfcourse/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_11:[
+      name: UCM_harbor
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_harbor/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_harbor/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_12:[
+      name: UCM_intersection
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_intersection/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_intersection/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_13:[
+      name: UCM_mediumresidential
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_mediumresidential/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_mediumresidential/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_14:[
+      name: UCM_mobilehomepark
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_mobilehomepark/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_mobilehomepark/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_15:[
+      name: UCM_overpass
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_overpass/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_overpass/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_16:[
+      name: UCM_parkinglot
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_parkinglot/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_parkinglot/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_17:[
+      name: UCM_river
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_river/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_river/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_18:[
+      name: UCM_runway
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_runway/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_runway/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_19:[
+      name: UCM_sparseresidential
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_sparseresidential/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_sparseresidential/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_20:[
+      name: UCM_storagetanks
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_storagetanks/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_storagetanks/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+    ucm_21:[
+      name: UCM_tenniscourt
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/UCM_tenniscourt/HR/x4
+      dataroot_lq: datasets/rssr_data/UCM_tenniscourt/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+  ]
+  analyse_datasets:[
+    analyse_0:[
+      name: Demo_Set5
+      type: IRDataset
+      dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+      dataroot_lq: datasets/demo_data/Demo_Set5/LRBI/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+  ]
+  infer_datasets:[
+    infer_0:[
+      name: Set5_GT
+      type: IRDataset
+      dataroot_gt: datasets/demo_data/Demo_Set5/HR/x4
+      io_backend:[
+        type: disk
+      ]
+    ]
+  ]
+  cka_datasets:[
+    cka_0:[
+      name: AID_val
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/AID/HR/x4
+      dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+      meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      input_size: 288
+    ]
+  ]
+  mad_datasets:[
+    mad_0:[
+      name: AID_val
+      type: IRDataset
+      dataroot_gt: datasets/rssr_data/AID/HR/x4
+      dataroot_lq: datasets/rssr_data/AID/LRBI/x4
+      meta_info_file: datasets/meta_info/AID_val_10_disk.txt
+      filename_tmpl: {}
+      io_backend:[
+        type: disk
+      ]
+      input_size: 288
+    ]
+  ]
+  interpret_imgs:[
+    img_0:[
+      img_path: datasets/demo_data/Urban7/7.png
+      w: 110
+      h: 150
+    ]
+  ]
+  logger:[
+    print_freq: 1000
+    save_checkpoint_freq: 1000
+    use_tb_logger: False
+    wandb:[
+      project: None
+      resume_id: None
+    ]
+  ]
+  dist_params:[
+    backend: nccl
+    port: 4000
+  ]
+  dist: False
+  rank: 0
+  world_size: 1
+  auto_resume: False
+  is_train: False
+
+2024-03-21 18:43:57,296 INFO: Dataset [IRDataset] - UCM_agricultural is built.
+2024-03-21 18:43:57,296 INFO: Number of test images in UCM_agricultural: 100
+2024-03-21 18:43:57,298 INFO: Dataset [IRDataset] - UCM_golfcourse is built.
+2024-03-21 18:43:57,299 INFO: Number of test images in UCM_golfcourse: 100
+2024-03-21 18:43:57,301 INFO: Dataset [IRDataset] - UCM_harbor is built.
+2024-03-21 18:43:57,301 INFO: Number of test images in UCM_harbor: 100
+2024-03-21 18:43:57,304 INFO: Dataset [IRDataset] - UCM_intersection is built.
+2024-03-21 18:43:57,304 INFO: Number of test images in UCM_intersection: 100
+2024-03-21 18:43:57,306 INFO: Dataset [IRDataset] - UCM_mediumresidential is built.
+2024-03-21 18:43:57,306 INFO: Number of test images in UCM_mediumresidential: 100
+2024-03-21 18:43:57,309 INFO: Dataset [IRDataset] - UCM_mobilehomepark is built.
+2024-03-21 18:43:57,309 INFO: Number of test images in UCM_mobilehomepark: 100
+2024-03-21 18:43:57,311 INFO: Dataset [IRDataset] - UCM_overpass is built.
+2024-03-21 18:43:57,312 INFO: Number of test images in UCM_overpass: 100
+2024-03-21 18:43:57,314 INFO: Dataset [IRDataset] - UCM_parkinglot is built.
+2024-03-21 18:43:57,314 INFO: Number of test images in UCM_parkinglot: 100
+2024-03-21 18:43:57,317 INFO: Dataset [IRDataset] - UCM_river is built.
+2024-03-21 18:43:57,317 INFO: Number of test images in UCM_river: 100
+2024-03-21 18:43:57,319 INFO: Dataset [IRDataset] - UCM_runway is built.
+2024-03-21 18:43:57,319 INFO: Number of test images in UCM_runway: 100
+2024-03-21 18:43:57,322 INFO: Dataset [IRDataset] - UCM_sparseresidential is built.
+2024-03-21 18:43:57,322 INFO: Number of test images in UCM_sparseresidential: 100
+2024-03-21 18:43:57,324 INFO: Dataset [IRDataset] - UCM_airplane is built.
+2024-03-21 18:43:57,324 INFO: Number of test images in UCM_airplane: 100
+2024-03-21 18:43:57,327 INFO: Dataset [IRDataset] - UCM_storagetanks is built.
+2024-03-21 18:43:57,327 INFO: Number of test images in UCM_storagetanks: 100
+2024-03-21 18:43:57,329 INFO: Dataset [IRDataset] - UCM_tenniscourt is built.
+2024-03-21 18:43:57,329 INFO: Number of test images in UCM_tenniscourt: 100
+2024-03-21 18:43:57,332 INFO: Dataset [IRDataset] - UCM_baseballdiamond is built.
+2024-03-21 18:43:57,332 INFO: Number of test images in UCM_baseballdiamond: 100
+2024-03-21 18:43:57,335 INFO: Dataset [IRDataset] - UCM_beach is built.
+2024-03-21 18:43:57,335 INFO: Number of test images in UCM_beach: 100
+2024-03-21 18:43:57,337 INFO: Dataset [IRDataset] - UCM_buildings is built.
+2024-03-21 18:43:57,337 INFO: Number of test images in UCM_buildings: 100
+2024-03-21 18:43:57,340 INFO: Dataset [IRDataset] - UCM_chaparral is built.
+2024-03-21 18:43:57,340 INFO: Number of test images in UCM_chaparral: 100
+2024-03-21 18:43:57,342 INFO: Dataset [IRDataset] - UCM_denseresidential is built.
+2024-03-21 18:43:57,342 INFO: Number of test images in UCM_denseresidential: 100
+2024-03-21 18:43:57,345 INFO: Dataset [IRDataset] - UCM_forest is built.
+2024-03-21 18:43:57,345 INFO: Number of test images in UCM_forest: 100
+2024-03-21 18:43:57,348 INFO: Dataset [IRDataset] - UCM_freeway is built.
+2024-03-21 18:43:57,348 INFO: Number of test images in UCM_freeway: 100
+2024-03-21 18:43:57,407 INFO: Network [LAPAR] is created.
+2024-03-21 18:44:00,374 INFO: Loading LAPAR model from modelzoo/LAPAR/LAPAR_A_x4.pth, with param key: [None].
+2024-03-21 18:44:00,583 INFO: Model [IRModel] is created.
+2024-03-21 18:44:00,583 INFO: Testing UCM_agricultural...
+2024-03-21 18:44:05,801 INFO: Validation UCM_agricultural
+
+[psnr]   [Current: 27.2541 @ iter LAPAR-A_RSSR_x4]   [Best: 27.2541 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.5084  @ iter LAPAR-A_RSSR_x4]   [Best: 0.5084  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:05,801 INFO: Testing UCM_golfcourse...
+2024-03-21 18:44:10,205 INFO: Validation UCM_golfcourse
+
+[psnr]   [Current: 33.7253 @ iter LAPAR-A_RSSR_x4]   [Best: 33.7253 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8328  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8328  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:10,205 INFO: Testing UCM_harbor...
+2024-03-21 18:44:14,621 INFO: Validation UCM_harbor
+
+[psnr]   [Current: 24.7485 @ iter LAPAR-A_RSSR_x4]   [Best: 24.7485 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8306  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8306  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:14,621 INFO: Testing UCM_intersection...
+2024-03-21 18:44:18,993 INFO: Validation UCM_intersection
+
+[psnr]   [Current: 28.2698 @ iter LAPAR-A_RSSR_x4]   [Best: 28.2698 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8072  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8072  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:18,993 INFO: Testing UCM_mediumresidential...
+2024-03-21 18:44:23,193 INFO: Validation UCM_mediumresidential
+
+[psnr]   [Current: 27.0503 @ iter LAPAR-A_RSSR_x4]   [Best: 27.0503 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.7628  @ iter LAPAR-A_RSSR_x4]   [Best: 0.7628  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:23,193 INFO: Testing UCM_mobilehomepark...
+2024-03-21 18:44:27,511 INFO: Validation UCM_mobilehomepark
+
+[psnr]   [Current: 25.9048 @ iter LAPAR-A_RSSR_x4]   [Best: 25.9048 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.7849  @ iter LAPAR-A_RSSR_x4]   [Best: 0.7849  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:27,512 INFO: Testing UCM_overpass...
+2024-03-21 18:44:31,848 INFO: Validation UCM_overpass
+
+[psnr]   [Current: 27.8645 @ iter LAPAR-A_RSSR_x4]   [Best: 27.8645 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.7734  @ iter LAPAR-A_RSSR_x4]   [Best: 0.7734  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:31,848 INFO: Testing UCM_parkinglot...
+2024-03-21 18:44:36,185 INFO: Validation UCM_parkinglot
+
+[psnr]   [Current: 23.1268 @ iter LAPAR-A_RSSR_x4]   [Best: 23.1268 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.7708  @ iter LAPAR-A_RSSR_x4]   [Best: 0.7708  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:36,185 INFO: Testing UCM_river...
+2024-03-21 18:44:40,518 INFO: Validation UCM_river
+
+[psnr]   [Current: 28.646  @ iter LAPAR-A_RSSR_x4]   [Best: 28.646  @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.7237  @ iter LAPAR-A_RSSR_x4]   [Best: 0.7237  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:40,518 INFO: Testing UCM_runway...
+2024-03-21 18:44:44,698 INFO: Validation UCM_runway
+
+[psnr]   [Current: 31.9105 @ iter LAPAR-A_RSSR_x4]   [Best: 31.9105 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8348  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8348  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:44,698 INFO: Testing UCM_sparseresidential...
+2024-03-21 18:44:49,134 INFO: Validation UCM_sparseresidential
+
+[psnr]   [Current: 29.3779 @ iter LAPAR-A_RSSR_x4]   [Best: 29.3779 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.7456  @ iter LAPAR-A_RSSR_x4]   [Best: 0.7456  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:49,134 INFO: Testing UCM_airplane...
+2024-03-21 18:44:53,463 INFO: Validation UCM_airplane
+
+[psnr]   [Current: 30.0181 @ iter LAPAR-A_RSSR_x4]   [Best: 30.0181 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8389  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8389  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:53,464 INFO: Testing UCM_storagetanks...
+2024-03-21 18:44:57,644 INFO: Validation UCM_storagetanks
+
+[psnr]   [Current: 29.471  @ iter LAPAR-A_RSSR_x4]   [Best: 29.471  @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8275  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8275  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:44:57,644 INFO: Testing UCM_tenniscourt...
+2024-03-21 18:45:02,069 INFO: Validation UCM_tenniscourt
+
+[psnr]   [Current: 29.9629 @ iter LAPAR-A_RSSR_x4]   [Best: 29.9629 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8128  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8128  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:45:02,070 INFO: Testing UCM_baseballdiamond...
+2024-03-21 18:45:06,252 INFO: Validation UCM_baseballdiamond
+
+[psnr]   [Current: 33.7527 @ iter LAPAR-A_RSSR_x4]   [Best: 33.7527 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8455  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8455  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:45:06,252 INFO: Testing UCM_beach...
+2024-03-21 18:45:10,576 INFO: Validation UCM_beach
+
+[psnr]   [Current: 36.0034 @ iter LAPAR-A_RSSR_x4]   [Best: 36.0034 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8859  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8859  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:45:10,576 INFO: Testing UCM_buildings...
+2024-03-21 18:45:14,789 INFO: Validation UCM_buildings
+
+[psnr]   [Current: 27.7141 @ iter LAPAR-A_RSSR_x4]   [Best: 27.7141 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8333  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8333  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:45:14,789 INFO: Testing UCM_chaparral...
+2024-03-21 18:45:19,005 INFO: Validation UCM_chaparral
+
+[psnr]   [Current: 26.9224 @ iter LAPAR-A_RSSR_x4]   [Best: 26.9224 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.7326  @ iter LAPAR-A_RSSR_x4]   [Best: 0.7326  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:45:19,005 INFO: Testing UCM_denseresidential...
+2024-03-21 18:45:23,271 INFO: Validation UCM_denseresidential
+
+[psnr]   [Current: 27.7315 @ iter LAPAR-A_RSSR_x4]   [Best: 27.7315 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8288  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8288  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:45:23,271 INFO: Testing UCM_forest...
+2024-03-21 18:45:27,358 INFO: Validation UCM_forest
+
+[psnr]   [Current: 28.2818 @ iter LAPAR-A_RSSR_x4]   [Best: 28.2818 @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.6714  @ iter LAPAR-A_RSSR_x4]   [Best: 0.6714  @ iter LAPAR-A_RSSR_x4]
+
+2024-03-21 18:45:27,358 INFO: Testing UCM_freeway...
+2024-03-21 18:45:31,502 INFO: Validation UCM_freeway
+
+[psnr]   [Current: 30.017  @ iter LAPAR-A_RSSR_x4]   [Best: 30.017  @ iter LAPAR-A_RSSR_x4]
+
+[ssim]   [Current: 0.8071  @ iter LAPAR-A_RSSR_x4]   [Best: 0.8071  @ iter LAPAR-A_RSSR_x4]
+
