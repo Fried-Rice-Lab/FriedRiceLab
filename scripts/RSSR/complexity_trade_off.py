@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["font.serif"] = ["Times New Roman"] + plt.rcParams["font.serif"]
+
 method_list = [
     "EDSR",
     "LAPAR",
@@ -39,21 +42,21 @@ mem = [data[7] * 20 for data in data_dict]
 plt.scatter(x=flops, y=psnr, s=mem, c=color, alpha=0.68)
 
 # 标记
-plt.text( x=flops[0] -25, y=psnr[0] + 0.2 , s="{}".format(method_list[0]), fontsize=9)
-plt.text( x=flops[1] +15, y=psnr[1] - 0.6 , s="{}".format(method_list[1]), fontsize=9)
-plt.text( x=flops[2] + 5, y=psnr[2] + 0.2 , s="{}".format(method_list[2]), fontsize=9)
-plt.text( x=flops[3] + 7, y=psnr[3] + 0.2 , s="{}".format(method_list[3]), fontsize=9)
-plt.text( x=flops[4] -27, y=psnr[4] + 0.2 , s="{}".format(method_list[4]), fontsize=9)
-plt.text( x=flops[5] + 5, y=psnr[5] - 0.5 , s="{}".format(method_list[5]), fontsize=9)
-plt.text( x=flops[6] + 5, y=psnr[6] + 0.2 , s="{}".format(method_list[6]), fontsize=9)
+plt.text(x=flops[0] - 25, y=psnr[0] + 0.2, s="{}".format(method_list[0]), fontsize=9)
+plt.text(x=flops[1] + 15, y=psnr[1] - 0.6, s="{}".format(method_list[1]), fontsize=9)
+plt.text(x=flops[2] + 5, y=psnr[2] + 0.2, s="{}".format(method_list[2]), fontsize=9)
+plt.text(x=flops[3] + 7, y=psnr[3] + 0.2, s="{}".format(method_list[3]), fontsize=9)
+plt.text(x=flops[4] - 27, y=psnr[4] + 0.2, s="{}".format(method_list[4]), fontsize=9)
+plt.text(x=flops[5] + 5, y=psnr[5] - 0.5, s="{}".format(method_list[5]), fontsize=9)
+plt.text(x=flops[6] + 5, y=psnr[6] + 0.2, s="{}".format(method_list[6]), fontsize=9)
 
 # 图例
 plt.text(x=149, y=0.7867, s="#Memory", fontsize=7)
 plt.gca().add_patch(
     Rectangle(
-        xy=(148, 0.784),
-        width=80,
-        height=0.0033,
+        xy=(138, 28.02),
+        width=89,
+        height=2.2,
         fill=False,
         linewidth=0.95,
         linestyle="dashed",
@@ -63,13 +66,15 @@ plt.gca().add_patch(
 plt.text(x=flops[7] - 2.5, y=psnr[7] - 1.0, s="10M", fontsize=7)
 plt.text(x=flops[8] - 2.5, y=psnr[8] - 1.0, s="50M", fontsize=7)
 plt.text(x=flops[9] - 2.5, y=psnr[9] - 1.0, s="100M", fontsize=7)
-plt.text(x=flops[10]- 2.5, y=psnr[10]- 1.0, s="200M", fontsize=7)
+plt.text(x=flops[10] - 2.5, y=psnr[10] - 1.0, s="200M", fontsize=7)
+
+plt.text(x=159, y=30.4, s="Model Params [K]", fontsize=9)
 
 # 调整坐标轴
 plt.xlabel("FLOPs [G]")
 plt.ylabel("PSNR on UCM (agricultural)")
 plt.xlim(10, 230)
-plt.ylim(28, 36)
+plt.ylim(27.9, 36)
 
 # plt.axis([229.6, 34.2, 0.7838, 0.8013])
 
