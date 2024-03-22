@@ -15,3 +15,9 @@ CUDA_VISIBLE_DEVICES=1 python analyse.py -expe_opt options/expe/HNCT/HNCT_LSR.ym
 
 # SwinIR
 CUDA_VISIBLE_DEVICES=1 python analyse.py -expe_opt options/expe/SwinIR/SwinIR_LSR.yml -task_opt options/task/RSSR_x4.yml
+
+# CTHN
+CUDA_VISIBLE_DEVICES=1 python analyse.py -expe_opt options/expe/CTHN/CTHN_LSR.yml -task_opt options/task/RSSR_x4.yml
+
+# ESRT
+CUDA_VISIBLE_DEVICES=1 python analyse.py -expe_opt options/expe/ESRT/ESRT_LSR.yml -task_opt options/task/RSSR_x4.yml
