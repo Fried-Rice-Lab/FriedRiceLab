@@ -66,7 +66,8 @@ def attr_grad(tensor, h, w, window=8, reduce='sum'):
 # gabor_filter = cv2.getGaborKernel((21, 21), 10.0, -np.pi/4, 8.0, 1, 0, ktype=cv2.CV_32F)
 
 def attr_gabor_generator(gabor_filter):
-    filter = torch.from_numpy(gabor_filter).view((1, 1,) + gabor_filter.shape).repeat(1, 3, 1, 1)
+    filter = torch.from_numpy(gabor_filter).view(
+        (1, 1,) + gabor_filter.shape).repeat(1, 3, 1, 1)
 
     def attr_gabor(tensor, h, w, window=8, reduce='sum'):
         after_filter = f.conv2d(tensor, filter, bias=None)
@@ -233,7 +234,8 @@ def mod_crop(tensor, scale=4):
 
 
 def cv2_to_pil(img):
-    image = Image.fromarray(cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2RGB))
+    image = Image.fromarray(cv2.cvtColor(
+        img.astype(np.uint8), cv2.COLOR_BGR2RGB))
     return image
 
 
@@ -350,8 +352,10 @@ def click_select_position(pil_img, window_size=16):
             position[0] = x
             position[1] = y
             draw_img = cv2_img.copy()
-            cv2.rectangle(draw_img, (x, y), (x + window_size, y + window_size), (0, 0, 255), 2)
-            cv2.putText(draw_img, xy, (x, y), cv2.FONT_HERSHEY_PLAIN, 1.0, (255, 255, 255), thickness=1)
+            cv2.rectangle(draw_img, (x, y), (x + window_size,
+                          y + window_size), (0, 0, 255), 2)
+            cv2.putText(draw_img, xy, (x, y), cv2.FONT_HERSHEY_PLAIN,
+                        1.0, (255, 255, 255), thickness=1)
             cv2.imshow("image", draw_img)
 
     cv2.namedWindow("image")

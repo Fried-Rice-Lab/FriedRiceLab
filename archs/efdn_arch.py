@@ -4,13 +4,15 @@
 #
 # Modified by Tianle Liu (tianle.l@outlook.com)
 # ----------------------------------------------------------------------
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Upsampler, ESA, Conv2d1x1, Conv2d3x3
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import ESA
+from archs.utils import Upsampler
 
 
 def multiscale(kernel, target_kernel_size):
@@ -50,7 +52,8 @@ class SeqConv3x3(nn.Module):
             self.bias = nn.Parameter(bias)
 
             # init mask
-            self.mask = torch.zeros((self.out_planes, 1, 3, 3), dtype=torch.float32)
+            self.mask = torch.zeros(
+                (self.out_planes, 1, 3, 3), dtype=torch.float32)
             for i in range(self.out_planes):
                 self.mask[i, 0, 0, 0] = 1.0
                 self.mask[i, 0, 1, 0] = 2.0
@@ -73,7 +76,8 @@ class SeqConv3x3(nn.Module):
             self.bias = nn.Parameter(torch.FloatTensor(bias))
 
             # init mask
-            self.mask = torch.zeros((self.out_planes, 1, 3, 3), dtype=torch.float32)
+            self.mask = torch.zeros(
+                (self.out_planes, 1, 3, 3), dtype=torch.float32)
             for i in range(self.out_planes):
                 self.mask[i, 0, 0, 0] = 1.0
                 self.mask[i, 0, 0, 1] = 2.0
@@ -96,7 +100,8 @@ class SeqConv3x3(nn.Module):
             self.bias = nn.Parameter(torch.FloatTensor(bias))
 
             # init mask
-            self.mask = torch.zeros((self.out_planes, 1, 3, 3), dtype=torch.float32)
+            self.mask = torch.zeros(
+                (self.out_planes, 1, 3, 3), dtype=torch.float32)
             for i in range(self.out_planes):
                 self.mask[i, 0, 0, 1] = 1.0
                 self.mask[i, 0, 1, 0] = 1.0
@@ -144,11 +149,13 @@ class SeqConv3x3(nn.Module):
             # re-param conv kernel
             RK = F.conv2d(input=self.k1, weight=self.k0.permute(1, 0, 2, 3))
             # re-param conv bias
-            RB = torch.ones(1, self.mid_planes, 3, 3, device=device) * self.b0.view(1, -1, 1, 1)
+            RB = torch.ones(1, self.mid_planes, 3, 3,
+                            device=device) * self.b0.view(1, -1, 1, 1)
             RB = F.conv2d(input=RB, weight=self.k1).view(-1, ) + self.b1
         else:
             tmp = self.scale * self.mask
-            k1 = torch.zeros((self.out_planes, self.out_planes, 3, 3), device=device)
+            k1 = torch.zeros(
+                (self.out_planes, self.out_planes, 3, 3), device=device)
             for i in range(self.out_planes):
                 k1[i, i, :, :] = tmp[i, 0, :, :]
             b1 = self.bias
@@ -156,7 +163,8 @@ class SeqConv3x3(nn.Module):
             # re-param conv kernel
             RK = F.conv2d(input=k1, weight=self.k0.permute(1, 0, 2, 3))
             # re-param conv bias
-            RB = torch.ones(1, self.out_planes, 3, 3, device=device) * self.b0.view(1, -1, 1, 1)
+            RB = torch.ones(1, self.out_planes, 3, 3,
+                            device=device) * self.b0.view(1, -1, 1, 1)
             RB = F.conv2d(input=RB, weight=k1).view(-1, ) + b1
         return RK, RB
 
@@ -182,10 +190,14 @@ class EDBB(nn.Module):
         else:
             self.rep_conv = Conv2d3x3(n_feats, n_feats)
             self.conv1x1 = Conv2d1x1(n_feats, n_feats)
-            self.conv1x1_3x3 = SeqConv3x3('conv1x1-conv3x3', n_feats, n_feats, depth_multiplier)
-            self.conv1x1_sbx = SeqConv3x3('conv1x1-sobelx', n_feats, n_feats, -1)
-            self.conv1x1_sby = SeqConv3x3('conv1x1-sobely', n_feats, n_feats, -1)
-            self.conv1x1_lpl = SeqConv3x3('conv1x1-laplacian', n_feats, n_feats, -1)
+            self.conv1x1_3x3 = SeqConv3x3(
+                'conv1x1-conv3x3', n_feats, n_feats, depth_multiplier)
+            self.conv1x1_sbx = SeqConv3x3(
+                'conv1x1-sobelx', n_feats, n_feats, -1)
+            self.conv1x1_sby = SeqConv3x3(
+                'conv1x1-sobely', n_feats, n_feats, -1)
+            self.conv1x1_lpl = SeqConv3x3(
+                'conv1x1-laplacian', n_feats, n_feats, -1)
 
         self.act = nn.PReLU(n_feats)
 
@@ -194,7 +206,8 @@ class EDBB(nn.Module):
             y = self.rep_conv(x)
         else:
             y = self.rep_conv(x) + self.conv1x1(x) + self.conv1x1_3x3(x) + \
-                self.conv1x1_sbx(x) + self.conv1x1_sby(x) + self.conv1x1_lpl(x) + x
+                self.conv1x1_sbx(x) + self.conv1x1_sby(x) + \
+                self.conv1x1_lpl(x) + x
 
         return self.act(y)
 
@@ -255,7 +268,8 @@ class EFDB(nn.Module):
 
         self.fuse = Conv2d1x1(n_feats * 2, n_feats)
         self.att = ESA(n_feats, n_feats // 4, 3)
-        self.branch = nn.ModuleList([Conv2d1x1(n_feats, n_feats // 2) for _ in range(4)])
+        self.branch = nn.ModuleList(
+            [Conv2d1x1(n_feats, n_feats // 2) for _ in range(4)])
 
     def forward(self, x):
         out1 = self.act(self.conv1(x))
@@ -285,9 +299,11 @@ class EFDN(nn.Module):
         super(EFDN, self).__init__()
         self.head = Conv2d3x3(num_in_ch, n_feats)
 
-        self.cells = nn.ModuleList([EFDB(n_feats, deploy=deploy) for _ in range(4)])
+        self.cells = nn.ModuleList(
+            [EFDB(n_feats, deploy=deploy) for _ in range(4)])
 
-        self.local_fuse = nn.ModuleList([Conv2d1x1(n_feats * 2, n_feats) for _ in range(3)])
+        self.local_fuse = nn.ModuleList(
+            [Conv2d1x1(n_feats * 2, n_feats) for _ in range(3)])
 
         self.tail = Upsampler(upscale=upscale, in_channels=n_feats,
                               out_channels=num_out_ch, upsample_mode=task)
@@ -313,11 +329,12 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
     # EFDN
-    net = EFDN(upscale=4, n_feats=48, num_in_ch=3, num_out_ch=3, task='lsr', deploy=False)
+    net = EFDN(upscale=4, n_feats=48, num_in_ch=3,
+               num_out_ch=3, task='lsr', deploy=False)
     print(count_parameters(net))
-    net = EFDN(upscale=4, n_feats=48, num_in_ch=3, num_out_ch=3, task='lsr', deploy=True)
+    net = EFDN(upscale=4, n_feats=48, num_in_ch=3,
+               num_out_ch=3, task='lsr', deploy=True)
     print(count_parameters(net))
 
     data = torch.randn(1, 3, 120, 80)

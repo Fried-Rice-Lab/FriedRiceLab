@@ -1,7 +1,10 @@
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import OptFloat, OptLossClosure, Params, State
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
+from .types import State
 
 __all__ = ('LARS',)
 
@@ -140,7 +143,7 @@ class LARS(Optimizer):
                 if weight_decay != 0:
                     if p_norm != 0 and g_norm != 0:
                         lars_lr = p_norm / (
-                                g_norm + p_norm * weight_decay + group['eps']
+                            g_norm + p_norm * weight_decay + group['eps']
                         )
                         lars_lr *= group['trust_coefficient']
 

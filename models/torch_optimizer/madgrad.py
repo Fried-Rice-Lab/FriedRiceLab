@@ -1,7 +1,7 @@
-from typing import Callable, Optional
-
 import math
-import torch
+from typing import Callable
+from typing import Optional
+
 import torch.optim
 
 from .types import Params

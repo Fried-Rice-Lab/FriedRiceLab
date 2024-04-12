@@ -7,15 +7,19 @@ import logging
 from os import path as osp
 
 import torch
-from basicsr.data import build_dataloader, build_dataset
+from basicsr.data import build_dataloader
+from basicsr.data import build_dataset
 from basicsr.models import build_model
-from basicsr.utils import get_env_info, get_root_logger, get_time_str
+from basicsr.utils import get_env_info
+from basicsr.utils import get_root_logger
+from basicsr.utils import get_time_str
 from basicsr.utils.options import dict2str
 
 import archs  # noqa
 import data  # noqa
 import models  # noqa
-from utils import parse_options, make_exp_dirs
+from utils import make_exp_dirs
+from utils import parse_options
 
 
 def infer_pipeline(root_path):
@@ -27,8 +31,10 @@ def infer_pipeline(root_path):
 
     # mkdir and initialize loggers
     make_exp_dirs(opt)
-    log_file = osp.join(opt['path']['log'], f"infer_{opt['name']}_{get_time_str()}.log")
-    logger = get_root_logger(logger_name='basicsr', log_level=logging.INFO, log_file=log_file)
+    log_file = osp.join(opt['path']['log'],
+                        f"infer_{opt['name']}_{get_time_str()}.log")
+    logger = get_root_logger(logger_name='basicsr',
+                             log_level=logging.INFO, log_file=log_file)
     logger.info(get_env_info())
     logger.info(dict2str(opt))
 
@@ -42,7 +48,8 @@ def infer_pipeline(root_path):
         infer_set = build_dataset(dataset_opt)
         infer_loader = build_dataloader(
             infer_set, dataset_opt, num_gpu=opt['num_gpu'], dist=opt['dist'], sampler=None, seed=opt['manual_seed'])
-        logger.info(f"Number of infer images in {dataset_opt['name']}: {len(infer_set)}")
+        logger.info(
+            f"Number of infer images in {dataset_opt['name']}: {len(infer_set)}")
         infer_loaders.append(infer_loader)
 
     # create model

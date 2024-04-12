@@ -7,7 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as f
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, PixelAttention
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import PixelAttention
 
 
 class SCPA(nn.Module):
@@ -71,14 +73,17 @@ class PanUpsamper(nn.Module):
 
     def forward(self, x):
         if self.scale == 2 or self.scale == 3:
-            out = self.conv33_first(f.interpolate(x, scale_factor=self.scale, mode='nearest'))
+            out = self.conv33_first(f.interpolate(
+                x, scale_factor=self.scale, mode='nearest'))
             out = self.lrelu(self.pa_first(out))
             out = self.lrelu(self.conv33_second(out))
         elif self.scale == 4:
-            out = self.conv33_first(f.interpolate(x, scale_factor=2, mode='nearest'))
+            out = self.conv33_first(f.interpolate(
+                x, scale_factor=2, mode='nearest'))
             out = self.lrelu(self.pa_first(out))
             out = self.lrelu(self.conv33_second(out))
-            out = self.conv33_third(f.interpolate(out, scale_factor=2, mode='nearest'))
+            out = self.conv33_third(f.interpolate(
+                out, scale_factor=2, mode='nearest'))
             out = self.lrelu(self.pa_second(out))
             out = self.lrelu(self.conv33_fourth(out))
         return self.conv33_fifth(out)
@@ -97,7 +102,8 @@ class PAN(nn.Module):
 
         self.conv33_first = Conv2d3x3(num_in_ch, planes)
 
-        self.body = nn.Sequential(*[SCPA(planes=planes) for _ in range(n_blocks)])
+        self.body = nn.Sequential(*[SCPA(planes=planes)
+                                  for _ in range(n_blocks)])
 
         self.conv33_middle = Conv2d3x3(planes, planes)
         self.upsamper = PanUpsamper(planes, tail_planes, num_out_ch, upscale)
@@ -110,7 +116,8 @@ class PAN(nn.Module):
         body = head + body
         # tail
         tail = self.upsamper(body)
-        input_lr = f.interpolate(x, scale_factor=self.scale, mode='bilinear', align_corners=False)
+        input_lr = f.interpolate(
+            x, scale_factor=self.scale, mode='bilinear', align_corners=False)
         tail = tail + input_lr
         return tail
 

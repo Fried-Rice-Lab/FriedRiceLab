@@ -145,8 +145,10 @@ class RDN(nn.Module):
         }[arch_type]
 
         # Shallow feature extraction net
-        self.SFENet1 = nn.Conv2d(3, G0, kSize, padding=(kSize - 1) // 2, stride=1)
-        self.SFENet2 = nn.Conv2d(G0, G0, kSize, padding=(kSize - 1) // 2, stride=1)
+        self.SFENet1 = nn.Conv2d(
+            3, G0, kSize, padding=(kSize - 1) // 2, stride=1)
+        self.SFENet2 = nn.Conv2d(
+            G0, G0, kSize, padding=(kSize - 1) // 2, stride=1)
 
         # Redidual dense blocks and dense feature fusion
         self.RDBs = nn.ModuleList()
@@ -164,13 +166,15 @@ class RDN(nn.Module):
         # Up-sampling net
         if r == 2 or r == 3:
             self.UPNet = nn.Sequential(*[
-                nn.Conv2d(G0, G * r * r, kSize, padding=(kSize - 1) // 2, stride=1),
+                nn.Conv2d(G0, G * r * r, kSize,
+                          padding=(kSize - 1) // 2, stride=1),
                 nn.PixelShuffle(r),
                 nn.Conv2d(G, 3, kSize, padding=(kSize - 1) // 2, stride=1)
             ])
         elif r == 4:
             self.UPNet = nn.Sequential(*[
-                nn.Conv2d(G0, G * 4, kSize, padding=(kSize - 1) // 2, stride=1),
+                nn.Conv2d(G0, G * 4, kSize,
+                          padding=(kSize - 1) // 2, stride=1),
                 nn.PixelShuffle(2),
                 nn.Conv2d(G, G * 4, kSize, padding=(kSize - 1) // 2, stride=1),
                 nn.PixelShuffle(2),
@@ -197,7 +201,6 @@ class RDN(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = RDN(4, 3, 3, 'csr')
     print(count_parameters(net))

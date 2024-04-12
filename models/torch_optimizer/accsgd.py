@@ -2,7 +2,9 @@ import copy
 
 from torch.optim.optimizer import Optimizer
 
-from .types import OptFloat, OptLossClosure, Params
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 __all__ = ('AccSGD',)
 
@@ -75,8 +77,8 @@ class AccSGD(Optimizer):
             weight_decay = group['weight_decay']
             large_lr = (group['lr'] * group['kappa']) / (group['small_const'])
             alpha = 1.0 - (
-                    (group['small_const'] * group['small_const'] * group['xi'])
-                    / group['kappa']
+                (group['small_const'] * group['small_const'] * group['xi'])
+                / group['kappa']
             )
             beta = 1.0 - alpha
             zeta = group['small_const'] / (group['small_const'] + beta)

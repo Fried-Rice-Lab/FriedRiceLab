@@ -41,9 +41,11 @@ class GroupLinear(nn.Linear):
             x = x.unsqueeze(dim=1)  # b c -> b l c
         b, l, c = x.size()
         o, c, g = self.out_features, self.in_features, self.groups
-        x = x.reshape(b, l, g, c // g).permute(0, 2, 1, 3)  # b l c -> b l g c/g -> b g l c/g
+        # b l c -> b l g c/g -> b g l c/g
+        x = x.reshape(b, l, g, c // g).permute(0, 2, 1, 3)
         x = f.linear(x, self.weight, self.bias)  # b g l c/g -> b g l o/g
-        x = x.permute(0, 2, 1, 3).reshape(b, l, o)  # b g l o/g -> b l g o/g -> b l o
+        # b g l o/g -> b l g o/g -> b l o
+        x = x.permute(0, 2, 1, 3).reshape(b, l, o)
         if x_len:
             return x.squeeze(dim=1)
         else:

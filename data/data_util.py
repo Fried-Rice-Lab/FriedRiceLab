@@ -4,7 +4,8 @@ import cv2
 import numpy as np
 import torch
 from basicsr.data.transforms import mod_crop
-from basicsr.utils import img2tensor, scandir
+from basicsr.utils import img2tensor
+from basicsr.utils import scandir
 from torch.nn import functional as f
 
 
@@ -61,7 +62,8 @@ def generate_frame_indices(crt_idx, max_frame_num, num_frames, padding='reflecti
         list[int]: A list of indices.
     """
     assert num_frames % 2 == 1, 'num_frames should be an odd number.'
-    assert padding in ('replicate', 'reflection', 'reflection_circle', 'circle'), f'Wrong padding mode: {padding}.'
+    assert padding in ('replicate', 'reflection', 'reflection_circle',
+                       'circle'), f'Wrong padding mode: {padding}.'
 
     max_frame_num = max_frame_num - 1  # start from 0
     num_pad = num_frames // 2
@@ -132,7 +134,8 @@ def paired_paths_from_lmdb(folders, keys, meta_info_file=None):
     """
     assert len(folders) == 2, ('The len of folders should be 2 with [input_folder, gt_folder]. '
                                f'But got {len(folders)}')
-    assert len(keys) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
+    assert len(
+        keys) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
     input_folder, gt_folder = folders
     input_key, gt_key = keys
 
@@ -147,7 +150,8 @@ def paired_paths_from_lmdb(folders, keys, meta_info_file=None):
 
     paths = []
     for lmdb_key in sorted(input_lmdb_keys):
-        paths.append(dict([(f'{input_key}_path', lmdb_key), (f'{gt_key}_path', lmdb_key)]))
+        paths.append(
+            dict([(f'{input_key}_path', lmdb_key), (f'{gt_key}_path', lmdb_key)]))
     return paths
 
 
@@ -178,7 +182,8 @@ def paired_paths_from_meta_info_file(folders, keys, meta_info_file, filename_tmp
     """
     assert len(folders) == 2, ('The len of folders should be 2 with [input_folder, gt_folder]. '
                                f'But got {len(folders)}')
-    assert len(keys) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
+    assert len(
+        keys) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
     input_folder, gt_folder = folders
     input_key, gt_key = keys
 
@@ -191,7 +196,8 @@ def paired_paths_from_meta_info_file(folders, keys, meta_info_file, filename_tmp
         input_name = f'{filename_tmpl.format(basename)}{ext}'
         input_path = osp.join(input_folder, input_name)
         gt_path = osp.join(gt_folder, gt_name)
-        paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
+        paths.append(
+            dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
     return paths
 
 
@@ -212,7 +218,8 @@ def paired_paths_from_folder(folders, keys, filename_tmpl):
     """
     assert len(folders) == 2, ('The len of folders should be 2 with [input_folder, gt_folder]. '
                                f'But got {len(folders)}')
-    assert len(keys) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
+    assert len(
+        keys) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
     input_folder, gt_folder = folders
     input_key, gt_key = keys
 
@@ -227,7 +234,8 @@ def paired_paths_from_folder(folders, keys, filename_tmpl):
         input_path = osp.join(input_folder, input_name)
         assert input_name in input_paths, f'{input_name} is not in {input_key}_paths.'
         gt_path = osp.join(gt_folder, gt_path)
-        paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
+        paths.append(
+            dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
     return paths
 
 
@@ -292,7 +300,8 @@ def duf_downsample(x, kernel_size=13, scale=4):
     Returns:
         Tensor: DUF downsampled frames.
     """
-    assert scale in (2, 3, 4), f'Only support scale (2, 3, 4), but got {scale}.'
+    assert scale in (
+        2, 3, 4), f'Only support scale (2, 3, 4), but got {scale}.'
 
     squeeze_flag = False
     if x.ndim == 4:
@@ -304,7 +313,8 @@ def duf_downsample(x, kernel_size=13, scale=4):
     x = f.pad(x, (pad_w, pad_w, pad_h, pad_h), 'reflect')
 
     gaussian_filter = generate_gaussian_kernel(kernel_size, 0.4 * scale)
-    gaussian_filter = torch.from_numpy(gaussian_filter).type_as(x).unsqueeze(0).unsqueeze(0)
+    gaussian_filter = torch.from_numpy(
+        gaussian_filter).type_as(x).unsqueeze(0).unsqueeze(0)
     x = f.conv2d(x, gaussian_filter, stride=scale)
     x = x[:, :, 2:-2, 2:-2]
     x = x.view(b, t, c, x.size(2), x.size(3))

@@ -9,14 +9,13 @@ import copy
 import os
 import sys
 
-import torch
 import torch.nn.parallel
 import torch.optim
-import torch.utils.data
 import torch.utils.data.distributed
 
-sys.path.append('./')
 from archs.efdn_arch import EFDN
+
+sys.path.append('./')
 
 parser = argparse.ArgumentParser(description='EFDN Conversion')
 parser.add_argument('load', metavar='LOAD', help='path to the weights file')
@@ -48,7 +47,8 @@ def model_convert(model: torch.nn.Module, save_path=None):
 def convert():
     args = parser.parse_args()
 
-    train_model = EFDN(upscale=4, n_feats=48, num_in_ch=3, num_out_ch=3, task='lsr', deploy=False)
+    train_model = EFDN(upscale=4, n_feats=48, num_in_ch=3,
+                       num_out_ch=3, task='lsr', deploy=False)
 
     if os.path.isfile(args.load):
         print("=> loading checkpoint '{}'".format(args.load))

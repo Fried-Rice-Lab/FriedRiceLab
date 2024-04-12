@@ -1,13 +1,14 @@
-import os
 import math
+import os
 import random
+from datetime import datetime
+
+import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import cv2
 from torchvision.utils import make_grid
-from datetime import datetime
 # import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 
 '''
 modified by Kai Zhang (github: https://github.com/cszn)
@@ -16,7 +17,8 @@ https://github.com/twhui/SRGAN-pyTorch
 https://github.com/xinntao/BasicSR
 '''
 
-IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP']
+IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG',
+                  '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP']
 
 
 def is_image_file(filename):
@@ -232,6 +234,7 @@ def tensor2single(img):
 
     return img
 
+
 def tensor2single3(img):
     img = img.data.squeeze().float().clamp_(0, 1).cpu().numpy()
     if img.ndim == 3:
@@ -248,12 +251,15 @@ def tensor2img(tensor, out_type=np.uint8, min_max=(0, 1)):
     Input: 4D(B,(3/1),H,W), 3D(C,H,W), or 2D(H,W), any range, RGB channel order
     Output: 3D(H,W,C) or 2D(H,W), [0,255], np.uint8 (default)
     '''
-    tensor = tensor.squeeze().float().cpu().clamp_(*min_max)  # squeeze first, then clamp
-    tensor = (tensor - min_max[0]) / (min_max[1] - min_max[0])  # to range [0,1]
+    tensor = tensor.squeeze().float().cpu().clamp_(
+        *min_max)  # squeeze first, then clamp
+    tensor = (tensor - min_max[0]) / \
+        (min_max[1] - min_max[0])  # to range [0,1]
     n_dim = tensor.dim()
     if n_dim == 4:
         n_img = len(tensor)
-        img_np = make_grid(tensor, nrow=int(math.sqrt(n_img)), normalize=False).numpy()
+        img_np = make_grid(tensor, nrow=int(
+            math.sqrt(n_img)), normalize=False).numpy()
         img_np = np.transpose(img_np[[2, 1, 0], :, :], (1, 2, 0))  # HWC, BGR
     elif n_dim == 3:
         img_np = tensor.numpy()
@@ -567,7 +573,8 @@ def cubic(x):
     absx2 = absx**2
     absx3 = absx**3
     return (1.5*absx3 - 2.5*absx2 + 1) * ((absx <= 1).type_as(absx)) + \
-        (-0.5*absx3 + 2.5*absx2 - 4*absx + 2) * (((absx > 1)*(absx <= 2)).type_as(absx))
+        (-0.5*absx3 + 2.5*absx2 - 4*absx + 2) * \
+        (((absx > 1)*(absx <= 2)).type_as(absx))
 
 
 def calculate_weights_indices(in_length, out_length, scale, kernel, kernel_width, antialiasing):
@@ -636,7 +643,8 @@ def imresize(img, scale, antialiasing=True):
     if need_squeeze:
         img.unsqueeze_(0)
     in_C, in_H, in_W = img.size()
-    out_C, out_H, out_W = in_C, math.ceil(in_H * scale), math.ceil(in_W * scale)
+    out_C, out_H, out_W = in_C, math.ceil(
+        in_H * scale), math.ceil(in_W * scale)
     kernel_width = 4
     kernel = 'cubic'
 
@@ -670,7 +678,8 @@ def imresize(img, scale, antialiasing=True):
     for i in range(out_H):
         idx = int(indices_H[i][0])
         for j in range(out_C):
-            out_1[j, i, :] = img_aug[j, idx:idx + kernel_width, :].transpose(0, 1).mv(weights_H[i])
+            out_1[j, i, :] = img_aug[j, idx:idx + kernel_width,
+                                     :].transpose(0, 1).mv(weights_H[i])
 
     # process W dimension
     # symmetric copying
@@ -692,7 +701,8 @@ def imresize(img, scale, antialiasing=True):
     for i in range(out_W):
         idx = int(indices_W[i][0])
         for j in range(out_C):
-            out_2[j, :, i] = out_1_aug[j, :, idx:idx + kernel_width].mv(weights_W[i])
+            out_2[j, :, i] = out_1_aug[j, :, idx:idx +
+                                       kernel_width].mv(weights_W[i])
     if need_squeeze:
         out_2.squeeze_()
     return out_2
@@ -711,7 +721,8 @@ def imresize_np(img, scale, antialiasing=True):
         img.unsqueeze_(2)
 
     in_H, in_W, in_C = img.size()
-    out_C, out_H, out_W = in_C, math.ceil(in_H * scale), math.ceil(in_W * scale)
+    out_C, out_H, out_W = in_C, math.ceil(
+        in_H * scale), math.ceil(in_W * scale)
     kernel_width = 4
     kernel = 'cubic'
 
@@ -745,7 +756,8 @@ def imresize_np(img, scale, antialiasing=True):
     for i in range(out_H):
         idx = int(indices_H[i][0])
         for j in range(out_C):
-            out_1[i, :, j] = img_aug[idx:idx + kernel_width, :, j].transpose(0, 1).mv(weights_H[i])
+            out_1[i, :, j] = img_aug[idx:idx + kernel_width,
+                                     :, j].transpose(0, 1).mv(weights_H[i])
 
     # process W dimension
     # symmetric copying
@@ -767,7 +779,8 @@ def imresize_np(img, scale, antialiasing=True):
     for i in range(out_W):
         idx = int(indices_W[i][0])
         for j in range(out_C):
-            out_2[:, i, j] = out_1_aug[:, idx:idx + kernel_width, j].mv(weights_W[i])
+            out_2[:, i, j] = out_1_aug[:, idx:idx +
+                                       kernel_width, j].mv(weights_W[i])
     if need_squeeze:
         out_2.squeeze_()
 

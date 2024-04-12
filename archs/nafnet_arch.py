@@ -83,11 +83,14 @@ class BaselineBlock(nn.Module):
         self.norm1 = LayerNorm2d(c)
         self.norm2 = LayerNorm2d(c)
 
-        self.dropout1 = nn.Dropout(drop_out_rate) if drop_out_rate > 0. else nn.Identity()
-        self.dropout2 = nn.Dropout(drop_out_rate) if drop_out_rate > 0. else nn.Identity()
+        self.dropout1 = nn.Dropout(
+            drop_out_rate) if drop_out_rate > 0. else nn.Identity()
+        self.dropout2 = nn.Dropout(
+            drop_out_rate) if drop_out_rate > 0. else nn.Identity()
 
         self.beta = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
-        self.gamma = nn.Parameter(torch.zeros((1, c, 1, 1)), requires_grad=True)
+        self.gamma = nn.Parameter(torch.zeros(
+            (1, c, 1, 1)), requires_grad=True)
 
     def forward(self, inp):
         x = inp
@@ -193,8 +196,10 @@ class NAFNetBaseline(nn.Module):
 
     def check_image_size(self, x):
         _, _, h, w = x.size()
-        mod_pad_h = (self.padder_size - h % self.padder_size) % self.padder_size
-        mod_pad_w = (self.padder_size - w % self.padder_size) % self.padder_size
+        mod_pad_h = (self.padder_size - h %
+                     self.padder_size) % self.padder_size
+        mod_pad_w = (self.padder_size - w %
+                     self.padder_size) % self.padder_size
         x = F.pad(x, (0, mod_pad_w, 0, mod_pad_h))
         return x
 
@@ -217,7 +222,8 @@ if __name__ == '__main__':
 
     from ptflops import get_model_complexity_info
 
-    macs, params = get_model_complexity_info(net, inp_shape, verbose=False, print_per_layer_stat=False)
+    macs, params = get_model_complexity_info(
+        net, inp_shape, verbose=False, print_per_layer_stat=False)
 
     params = float(params[:-3])
     macs = float(macs[:-4])

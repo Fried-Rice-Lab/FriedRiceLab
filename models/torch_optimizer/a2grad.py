@@ -1,11 +1,13 @@
 import copy
+import math
 from typing import Optional
 
-import math
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import OptFloat, OptLossClosure, Params
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 __all__ = ('A2GradUni', 'A2GradInc', 'A2GradExp')
 

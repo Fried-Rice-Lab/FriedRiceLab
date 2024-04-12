@@ -9,18 +9,20 @@ import os.path
 import pickle
 from os import path as osp
 
-import torch
 import torch.utils.data
 from basicsr.data import build_dataset
 from basicsr.data.prefetch_dataloader import PrefetchDataLoader
 from basicsr.models import build_model
-from basicsr.utils import get_env_info, get_root_logger, get_time_str
+from basicsr.utils import get_env_info
+from basicsr.utils import get_root_logger
+from basicsr.utils import get_time_str
 from basicsr.utils.options import dict2str
 
 import archs  # noqa
 import data  # noqa
 import models  # noqa
-from utils import parse_options, make_exp_dirs
+from utils import make_exp_dirs
+from utils import parse_options
 
 
 def build_dataloader(dataset, dataset_opt):
@@ -47,7 +49,8 @@ def build_dataloader(dataset, dataset_opt):
     if prefetch_mode == 'cpu':  # CPUPrefetcher
         num_prefetch_queue = dataset_opt.get('num_prefetch_queue', 1)
         logger = get_root_logger()
-        logger.info(f'Use {prefetch_mode} prefetch dataloader: num_prefetch_queue = {num_prefetch_queue}')
+        logger.info(
+            f'Use {prefetch_mode} prefetch dataloader: num_prefetch_queue = {num_prefetch_queue}')
         return PrefetchDataLoader(num_prefetch_queue=num_prefetch_queue, **dataloader_args)
     else:
         # prefetch_mode=None: Normal dataloader
@@ -64,8 +67,10 @@ def mad_pipeline(root_path):
 
     # mkdir and initialize loggers
     make_exp_dirs(opt)
-    log_file = osp.join(opt['path']['log'], f"mad_{opt['name']}_{get_time_str()}.log")
-    logger = get_root_logger(logger_name='basicsr', log_level=logging.INFO, log_file=log_file)
+    log_file = osp.join(opt['path']['log'],
+                        f"mad_{opt['name']}_{get_time_str()}.log")
+    logger = get_root_logger(logger_name='basicsr',
+                             log_level=logging.INFO, log_file=log_file)
     logger.info(get_env_info())
     logger.info(dict2str(opt))
 
@@ -77,7 +82,8 @@ def mad_pipeline(root_path):
         dataset_opt['scale'] = opt['scale']
         mad_set = build_dataset(dataset_opt)
         mad_loader = build_dataloader(mad_set, dataset_opt)
-        logger.info(f"Number of mad images in {dataset_opt['name']}: {len(mad_set)}")
+        logger.info(
+            f"Number of mad images in {dataset_opt['name']}: {len(mad_set)}")
         mad_loaders.append(mad_loader)
 
     # create model

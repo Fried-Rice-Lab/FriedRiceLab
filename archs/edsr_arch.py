@@ -8,7 +8,8 @@ import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d3x3, Upsampler
+from archs.utils import Conv2d3x3
+from archs.utils import Upsampler
 
 
 class ResBlock(nn.Module):
@@ -46,7 +47,8 @@ class _EDSR(nn.Module):
         modules_head = [Conv2d3x3(num_in_ch, planes)]
         self.head = nn.Sequential(*modules_head)
 
-        modules_body = [ResBlock(planes, act_layer=act_layer) for _ in range(n_blocks)]
+        modules_body = [ResBlock(planes, act_layer=act_layer)
+                        for _ in range(n_blocks)]
         self.body = nn.Sequential(*modules_body)
 
         self.tail = nn.Sequential(Upsampler(upscale=upscale, in_channels=planes,

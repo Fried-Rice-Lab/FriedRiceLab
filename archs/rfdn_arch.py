@@ -8,7 +8,11 @@ import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, CCA, ESA, Upsampler
+from archs.utils import CCA
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import ESA
+from archs.utils import Upsampler
 
 
 class RFDB(nn.Module):

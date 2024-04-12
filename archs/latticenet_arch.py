@@ -35,8 +35,10 @@ class BasicBlock(nn.Sequential):
             in_channels, out_channels, kernel_size,
             padding=(kernel_size // 2), stride=stride, bias=bias)
         ]
-        if bn: m.append(nn.BatchNorm2d(out_channels))
-        if act is not None: m.append(act)
+        if bn:
+            m.append(nn.BatchNorm2d(out_channels))
+        if act is not None:
+            m.append(act)
         super(BasicBlock, self).__init__(*m)
 
 
@@ -49,8 +51,10 @@ class ResBlock(nn.Module):
         m = []
         for i in range(2):
             m.append(conv(n_feat, n_feat, kernel_size, bias=bias))
-            if bn: m.append(nn.BatchNorm2d(n_feat))
-            if i == 0: m.append(act)
+            if bn:
+                m.append(nn.BatchNorm2d(n_feat))
+            if i == 0:
+                m.append(act)
 
         self.body = nn.Sequential(*m)
         self.res_scale = res_scale
@@ -80,7 +84,7 @@ class SELayer(nn.Module):
         return x * y
 
 
-## add SEResBlock
+# add SEResBlock
 class SEResBlock(nn.Module):
     def __init__(
             self, conv, n_feat, kernel_size, reduction,
@@ -90,8 +94,10 @@ class SEResBlock(nn.Module):
         modules_body = []
         for i in range(2):
             modules_body.append(conv(n_feat, n_feat, kernel_size, bias=bias))
-            if bn: modules_body.append(nn.BatchNorm2d(n_feat))
-            if i == 0: modules_body.append(act)
+            if bn:
+                modules_body.append(nn.BatchNorm2d(n_feat))
+            if i == 0:
+                modules_body.append(act)
         modules_body.append(SELayer(n_feat, reduction))
         self.body = nn.Sequential(*modules_body)
         self.res_scale = res_scale
@@ -104,7 +110,7 @@ class SEResBlock(nn.Module):
         return res
 
 
-## Combination Coefficient
+# Combination Coefficient
 class CC(nn.Module):
     def __init__(self, channel, reduction=16):
         super(CC, self).__init__()
@@ -152,11 +158,14 @@ class LatticeBlock(nn.Module):
         self.s = nFeat_slice
 
         block_0 = []
-        block_0.append(nn.Conv2d(nFeat, nFeat - nDiff, kernel_size=3, padding=1, bias=True))
+        block_0.append(nn.Conv2d(nFeat, nFeat - nDiff,
+                       kernel_size=3, padding=1, bias=True))
         block_0.append(nn.LeakyReLU(0.05))
-        block_0.append(nn.Conv2d(nFeat - nDiff, nFeat - nDiff, kernel_size=3, padding=1, bias=True))
+        block_0.append(nn.Conv2d(nFeat - nDiff, nFeat - nDiff,
+                       kernel_size=3, padding=1, bias=True))
         block_0.append(nn.LeakyReLU(0.05))
-        block_0.append(nn.Conv2d(nFeat - nDiff, nFeat, kernel_size=3, padding=1, bias=True))
+        block_0.append(nn.Conv2d(nFeat - nDiff, nFeat,
+                       kernel_size=3, padding=1, bias=True))
         block_0.append(nn.LeakyReLU(0.05))
         self.conv_block0 = nn.Sequential(*block_0)
 
@@ -164,18 +173,22 @@ class LatticeBlock(nn.Module):
         self.x_ca1 = CC(nFeat)
 
         block_1 = []
-        block_1.append(nn.Conv2d(nFeat, nFeat - nDiff, kernel_size=3, padding=1, bias=True))
+        block_1.append(nn.Conv2d(nFeat, nFeat - nDiff,
+                       kernel_size=3, padding=1, bias=True))
         block_1.append(nn.LeakyReLU(0.05))
-        block_1.append(nn.Conv2d(nFeat - nDiff, nFeat - nDiff, kernel_size=3, padding=1, bias=True))
+        block_1.append(nn.Conv2d(nFeat - nDiff, nFeat - nDiff,
+                       kernel_size=3, padding=1, bias=True))
         block_1.append(nn.LeakyReLU(0.05))
-        block_1.append(nn.Conv2d(nFeat - nDiff, nFeat, kernel_size=3, padding=1, bias=True))
+        block_1.append(nn.Conv2d(nFeat - nDiff, nFeat,
+                       kernel_size=3, padding=1, bias=True))
         block_1.append(nn.LeakyReLU(0.05))
         self.conv_block1 = nn.Sequential(*block_1)
 
         self.fea_ca2 = CC(nFeat)
         self.x_ca2 = CC(nFeat)
 
-        self.compress = nn.Conv2d(2 * nFeat, nFeat, kernel_size=1, padding=0, bias=True)
+        self.compress = nn.Conv2d(
+            2 * nFeat, nFeat, kernel_size=1, padding=0, bias=True)
 
     def forward(self, x):
         # analyse unit
@@ -211,8 +224,10 @@ class LatticeNet(nn.Module):
         self.sub_mean = MeanShift(255, rgb_mean, rgb_std)
 
         # define head module
-        self.conv1 = nn.Conv2d(num_in_ch, n_feats, kernel_size=3, padding=1, bias=True)
-        self.conv2 = nn.Conv2d(n_feats, n_feats, kernel_size=3, padding=1, bias=True)
+        self.conv1 = nn.Conv2d(
+            num_in_ch, n_feats, kernel_size=3, padding=1, bias=True)
+        self.conv2 = nn.Conv2d(
+            n_feats, n_feats, kernel_size=3, padding=1, bias=True)
 
         # define body module
         self.body_unit1 = LatticeBlock(n_feats, n_diff, n_slice)
@@ -221,24 +236,30 @@ class LatticeNet(nn.Module):
         self.body_unit4 = LatticeBlock(n_feats, n_diff, n_slice)
 
         self.T_tdm1 = nn.Sequential(
-            nn.Conv2d(n_feats, n_feats // 2, kernel_size=1, padding=0, bias=True),
+            nn.Conv2d(n_feats, n_feats // 2,
+                      kernel_size=1, padding=0, bias=True),
             nn.ReLU())
         self.L_tdm1 = nn.Sequential(
-            nn.Conv2d(n_feats, n_feats // 2, kernel_size=1, padding=0, bias=True),
+            nn.Conv2d(n_feats, n_feats // 2,
+                      kernel_size=1, padding=0, bias=True),
             nn.ReLU())
 
         self.T_tdm2 = nn.Sequential(
-            nn.Conv2d(n_feats, n_feats // 2, kernel_size=1, padding=0, bias=True),
+            nn.Conv2d(n_feats, n_feats // 2,
+                      kernel_size=1, padding=0, bias=True),
             nn.ReLU())
         self.L_tdm2 = nn.Sequential(
-            nn.Conv2d(n_feats, n_feats // 2, kernel_size=1, padding=0, bias=True),
+            nn.Conv2d(n_feats, n_feats // 2,
+                      kernel_size=1, padding=0, bias=True),
             nn.ReLU())
 
         self.T_tdm3 = nn.Sequential(
-            nn.Conv2d(n_feats, n_feats // 2, kernel_size=1, padding=0, bias=True),
+            nn.Conv2d(n_feats, n_feats // 2,
+                      kernel_size=1, padding=0, bias=True),
             nn.ReLU())
         self.L_tdm3 = nn.Sequential(
-            nn.Conv2d(n_feats, n_feats // 2, kernel_size=1, padding=0, bias=True),
+            nn.Conv2d(n_feats, n_feats // 2,
+                      kernel_size=1, padding=0, bias=True),
             nn.ReLU())
 
         # define tail module
@@ -283,7 +304,6 @@ class LatticeNet(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = LatticeNet(upscale=4, n_feats=64, n_diff=16, n_slice=4)
     print(count_parameters(net))

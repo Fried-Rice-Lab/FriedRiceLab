@@ -106,15 +106,19 @@ class EffAttention(nn.Module):
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
-        self.reduce = nn.Linear(dim, dim // reduction, bias=qkv_bias)  # dim // 1 for LBNet-T
-        self.qkv = nn.Linear(dim // reduction, dim // reduction * 3, bias=qkv_bias)  # dim // 1 for LBNet-T
+        self.reduce = nn.Linear(dim, dim // reduction,
+                                bias=qkv_bias)  # dim // 1 for LBNet-T
+        # dim // 1 for LBNet-T
+        self.qkv = nn.Linear(dim // reduction, dim //
+                             reduction * 3, bias=qkv_bias)
         self.proj = nn.Linear(dim // reduction, dim)  # dim // 1 for LBNet-T
         self.attn_drop = nn.Dropout(attn_drop)
 
     def forward(self, x):
         x = self.reduce(x)
         B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C //
+                                  self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
 
         q_all = torch.split(q, math.ceil(N // 16), dim=-2)
@@ -143,7 +147,8 @@ class TransBlock(nn.Module):
         self.atten = EffAttention(self.dim, num_heads=num_heads, qkv_bias=False, qk_scale=None, attn_drop=0.,
                                   proj_drop=0., reduction=reduction)
         self.norm1 = nn.LayerNorm(self.dim)
-        self.mlp = Mlp(in_features=dim, hidden_features=dim // 4, act_layer=act_layer, drop=drop)
+        self.mlp = Mlp(in_features=dim, hidden_features=dim //
+                       4, act_layer=act_layer, drop=drop)
         self.norm2 = nn.LayerNorm(self.dim)
 
     def forward(self, x):
@@ -237,9 +242,12 @@ class LFFM(nn.Module):
         self.b2 = FRDAB(n_feats=n_feats)
         self.b3 = FRDAB(n_feats=n_feats)
 
-        self.c1 = nn.Conv2d(2 * n_feats, n_feats, 1, stride=1, padding=0, groups=2)
-        self.c2 = nn.Conv2d(3 * n_feats, n_feats, 1, stride=1, padding=0, groups=2)
-        self.c3 = nn.Conv2d(4 * n_feats, n_feats, 1, stride=1, padding=0, groups=1)
+        self.c1 = nn.Conv2d(2 * n_feats, n_feats, 1,
+                            stride=1, padding=0, groups=2)
+        self.c2 = nn.Conv2d(3 * n_feats, n_feats, 1,
+                            stride=1, padding=0, groups=2)
+        self.c3 = nn.Conv2d(4 * n_feats, n_feats, 1,
+                            stride=1, padding=0, groups=1)
 
     def forward(self, x):
         res = x
@@ -304,8 +312,10 @@ class LBNet(nn.Module):
         self.se2 = CALayer(channel=n_feat, reduction=16)
         self.se3 = CALayer(channel=n_feat, reduction=16)
 
-        self.attention = TransBlock(n_feat=n_feat, dim=n_feat * 9, num_heads=num_head, reduction=reduction)
-        self.attention2 = TransBlock(n_feat=n_feat, dim=n_feat * 9, num_heads=num_head, reduction=reduction)
+        self.attention = TransBlock(
+            n_feat=n_feat, dim=n_feat * 9, num_heads=num_head, reduction=reduction)
+        self.attention2 = TransBlock(
+            n_feat=n_feat, dim=n_feat * 9, num_heads=num_head, reduction=reduction)
 
         self.c1 = default_conv(6 * n_feat, n_feat, 1)
         self.c2 = default_conv(n_feat, n_feat, 3)
@@ -372,7 +382,6 @@ class LBNet(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     # LBNet_x4
     net = LBNet(upscale=4, n_feat=32, num_head=8, reduction=2)

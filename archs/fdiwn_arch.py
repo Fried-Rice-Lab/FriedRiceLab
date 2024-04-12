@@ -17,7 +17,8 @@ def mean_channels(x):
 def std(x):
     assert (x.dim() == 4)
     x_mean = mean_channels(x)
-    x_var = (x - x_mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (x.shape[2] * x.shape[3])
+    x_var = (x - x_mean).pow(2).sum(3, keepdim=True).sum(2,
+                                                         keepdim=True) / (x.shape[2] * x.shape[3])
     return x_var.pow(0.5)
 
 
@@ -59,7 +60,8 @@ class BasicBlock(nn.Sequential):
         ]
         if bn:
             m.append(nn.BatchNorm2d(out_channels))
-        if act is not None: m.append(act)
+        if act is not None:
+            m.append(act)
         super(BasicBlock, self).__init__(*m)
 
 
@@ -93,7 +95,8 @@ class CEALayer(nn.Module):
         self.conv_du = nn.Sequential(
             nn.Conv2d(n_feats, n_feats // reduction, 1, padding=1, bias=True),
             nn.ReLU(inplace=True),
-            nn.Conv2d(n_feats // reduction, n_feats, 5, padding=1, groups=n_feats // reduction, bias=True),
+            nn.Conv2d(n_feats // reduction, n_feats, 5, padding=1,
+                      groups=n_feats // reduction, bias=True),
             nn.Sigmoid()
         )
 
@@ -121,7 +124,8 @@ def activation(act_type, inplace=False, neg_slope=0.05, n_prelu=1):
     elif act_type == 'prelu':
         layer = nn.PReLU(num_parameters=n_prelu, init=neg_slope)
     else:
-        raise NotImplementedError('activation layer [{:s}] is not found'.format(act_type))
+        raise NotImplementedError(
+            'activation layer [{:s}] is not found'.format(act_type))
     return layer
 
 
@@ -145,7 +149,8 @@ class SRBW(nn.Module):
         self.SAlayer = sa_layer(2 * n_feats)
 
     def forward(self, x):
-        y = self.res_scale(self.SAlayer(self.body(x))) + self.x_scale(self.conv(x))
+        y = self.res_scale(self.SAlayer(self.body(x))) + \
+            self.x_scale(self.conv(x))
         return y
 
 
@@ -192,7 +197,8 @@ class SRBW2(nn.Module):
         self.conv = nn.Conv2d(n_feats, n_feats // 2, kernel_size=3, padding=1)
 
     def forward(self, x):
-        y = self.res_scale(self.SAlayer(self.body(x))) + self.x_scale(self.conv(x))
+        y = self.res_scale(self.SAlayer(self.body(x))) + \
+            self.x_scale(self.conv(x))
         return y
 
 
@@ -241,7 +247,8 @@ class sa_layer(nn.Module):
         self.sbias = Parameter(torch.ones(1, n_feats // (2 * groups), 1, 1))
 
         self.sigmoid = nn.Sigmoid()
-        self.gn = nn.GroupNorm(n_feats // (2 * groups), n_feats // (2 * groups))
+        self.gn = nn.GroupNorm(n_feats // (2 * groups),
+                               n_feats // (2 * groups))
 
     @staticmethod
     def channel_shuffle(x, groups):
@@ -297,7 +304,7 @@ class MY(nn.Module):
         super(MY, self).__init__()
 
         self.act = activation('lrelu', neg_slope=0.05)
-        wn = lambda x: torch.nn.utils.weight_norm(x)
+        def wn(x): return torch.nn.utils.weight_norm(x)
         self.srb1 = SRBW1(n_feats)
         self.srb2 = SRBW1(n_feats)
         self.distilled_channels1 = n_feats // 2
@@ -310,8 +317,10 @@ class MY(nn.Module):
         self.B1_coffconv = CoffConv(n_feats)
         self.A2_coffconv = CoffConv(n_feats)
         self.B2_coffconv = CoffConv(n_feats)
-        self.conv_distilled1 = nn.Conv2d(n_feats // 2, n_feats, kernel_size=3, stride=1, padding=1, bias=False)
-        self.conv_distilled2 = nn.Conv2d(n_feats // 2, n_feats, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv_distilled1 = nn.Conv2d(
+            n_feats // 2, n_feats, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv_distilled2 = nn.Conv2d(
+            n_feats // 2, n_feats, kernel_size=3, stride=1, padding=1, bias=False)
         self.sigmoid1 = nn.Sigmoid()
         self.sigmoid2 = nn.Sigmoid()
         self.sigmoid3 = nn.Sigmoid()
@@ -320,12 +329,14 @@ class MY(nn.Module):
         self.srb3 = SRBW1(n_feats)
         self.srb4 = SRBW1(n_feats)
         self.fuse1 = SRBW2(n_feats * 2)
-        self.fuse2 = nn.Conv2d(2 * n_feats, n_feats, kernel_size=1, stride=1, padding=0, bias=False, dilation=1)
+        self.fuse2 = nn.Conv2d(
+            2 * n_feats, n_feats, kernel_size=1, stride=1, padding=0, bias=False, dilation=1)
         self.SAlayer = sa_layer(n_feats)
 
     def forward(self, x):
         out_a = self.act(self.srb1(x))
-        distilled_a1, remaining_a1 = torch.split(out_a, [self.distilled_channels1, self.remaining_channels1], dim=1)
+        distilled_a1, remaining_a1 = torch.split(
+            out_a, [self.distilled_channels1, self.remaining_channels1], dim=1)
         out_a = self.rb1(remaining_a1)
         A1 = self.A1_coffconv(out_a)
         out_b_1 = A1 * out_a + x
@@ -333,7 +344,8 @@ class MY(nn.Module):
         out_a_1 = B1 * x + out_a
 
         out_b = self.act(self.srb2(out_b_1))
-        distilled_b1, remaining_b1 = torch.split(out_b, [self.distilled_channels2, self.remaining_channels2], dim=1)
+        distilled_b1, remaining_b1 = torch.split(
+            out_b, [self.distilled_channels2, self.remaining_channels2], dim=1)
         out_b = self.rb2(remaining_b1)
         A2 = self.A2_coffconv(out_a_1)
         out_b_2 = A2 * out_a_1 + out_b
@@ -345,8 +357,10 @@ class MY(nn.Module):
         out_a_out = self.srb3(out_a_2)
         out_b_out = self.srb4(out_b_2)
 
-        out1 = self.fuse1(torch.cat([self.scale_x1(out_a_out), self.scale_x2(out_b_out)], dim=1))
-        out2 = self.sigmoid3(self.fuse2(torch.cat([self.scale_x1(out_a_out), self.scale_x2(out_b_out)], dim=1)))
+        out1 = self.fuse1(
+            torch.cat([self.scale_x1(out_a_out), self.scale_x2(out_b_out)], dim=1))
+        out2 = self.sigmoid3(self.fuse2(
+            torch.cat([self.scale_x1(out_a_out), self.scale_x2(out_b_out)], dim=1)))
 
         out = out2 * out_b_out
         y1 = out1 + out
@@ -361,11 +375,12 @@ class Li(nn.Module):
         super(Li, self).__init__()
 
         self.act = activation('lrelu', neg_slope=0.05)
-        wn = lambda x: torch.nn.utils.weight_norm(x)
+        def wn(x): return torch.nn.utils.weight_norm(x)
         self.MY1 = MY(n_feats)
         self.MY2 = MY(n_feats)
         self.MY3 = MY(n_feats)
-        self.conv = nn.Conv2d(n_feats, n_feats, kernel_size=3, stride=1, padding=1, bias=False, dilation=1)
+        self.conv = nn.Conv2d(n_feats, n_feats, kernel_size=3,
+                              stride=1, padding=1, bias=False, dilation=1)
         self.conv1 = nn.Conv2d(2 * n_feats, n_feats, kernel_size=3, stride=1, padding=1, groups=4, bias=False,
                                dilation=1)
         self.conv2 = nn.Conv2d(2 * n_feats, n_feats, kernel_size=3, stride=1, padding=1, groups=4, bias=False,
@@ -383,8 +398,10 @@ class Li(nn.Module):
         out2 = out1_1 + out1_2
         out3 = self.MY3(out2)
 
-        out_concat1 = self.conv1(self.channel_shuffle1(torch.cat([out1, out1_1], dim=1)))
-        out_concat2 = self.conv2(self.channel_shuffle1(torch.cat([out_concat1, out3], dim=1)))
+        out_concat1 = self.conv1(self.channel_shuffle1(
+            torch.cat([out1, out1_1], dim=1)))
+        out_concat2 = self.conv2(self.channel_shuffle1(
+            torch.cat([out_concat1, out3], dim=1)))
 
         res = self.rb1(x)
         out = self.scale_x(out_concat2 + out3) + self.scale_res(res)
@@ -412,9 +429,11 @@ class FDIWN(nn.Module):
         self.Li2 = Li(3 * planes // 8)
         self.Li3 = Li(3 * planes // 8)
 
-        self.conv1 = nn.Conv2d(3 * planes // 8, planes // 2, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(3 * planes // 8, planes //
+                               2, kernel_size=3, stride=1, padding=1, bias=False)
         up_body = list()
-        up_body.append(default_conv(planes // 2, 3 * (upscale ** 2), kernel_size=3, bias=True))
+        up_body.append(default_conv(planes // 2, 3 *
+                       (upscale ** 2), kernel_size=3, bias=True))
         up_body.append(nn.PixelShuffle(upscale))
         self.UP1 = nn.Sequential(*up_body)
 
@@ -441,7 +460,8 @@ class FDIWN(nn.Module):
 
         y_input_down5 = self.Li3(y_input_down4)
 
-        y_final = y_input + y_input_up1 + y_input_up2 + y_input_up3 + y_input_up4 + y_input_down5
+        y_final = y_input + y_input_up1 + y_input_up2 + \
+            y_input_up3 + y_input_up4 + y_input_down5
         y1 = self.UP1(self.conv1(y_final))
         y2 = self.UP2(self.conv2(y_input1))
         y = y1 + y2
@@ -453,7 +473,6 @@ class FDIWN(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = FDIWN(upscale=4, planes=64)
     print(count_parameters(net))

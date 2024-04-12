@@ -7,8 +7,14 @@ import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import MeanShift, Conv2d1x1, Conv2d3x3, ShiftConv2d1x1, \
-    SABase4D, TransformerGroup as _TransformerGroup, Upsampler, Swish
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import MeanShift
+from archs.utils import SABase4D
+from archs.utils import ShiftConv2d1x1
+from archs.utils import Swish
+from archs.utils import TransformerGroup as _TransformerGroup
+from archs.utils import Upsampler
 
 
 class MLP4D(nn.Module):
@@ -53,7 +59,8 @@ class TransformerGroup(_TransformerGroup):
                                         nn.BatchNorm2d(dim * 2)],
                             proj_layer=[Conv2d1x1(dim, dim)],
                             window_list=window_list,
-                            shift_list=shift_list if (i + 1) % 2 == 0 else None,
+                            shift_list=shift_list if (
+                                i + 1) % 2 == 0 else None,
                             return_attns=return_attns)
                    for i in range(n_t)]
 
@@ -114,7 +121,6 @@ class ESWT(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = ESWT(upscale=4, n_t=6, n_g=3, dim=60)
     print(count_parameters(net))

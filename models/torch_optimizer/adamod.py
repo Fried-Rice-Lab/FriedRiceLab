@@ -1,8 +1,12 @@
 import math
+
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import Betas2, OptFloat, OptLossClosure, Params
+from .types import Betas2
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 __all__ = ('AdaMod',)
 
@@ -125,9 +129,9 @@ class AdaMod(Optimizer):
                 bias_correction1 = 1 - beta1 ** state['step']
                 bias_correction2 = 1 - beta2 ** state['step']
                 step_size = (
-                        group['lr']
-                        * math.sqrt(bias_correction2)
-                        / bias_correction1
+                    group['lr']
+                    * math.sqrt(bias_correction2)
+                    / bias_correction1
                 )
 
                 if group['weight_decay'] != 0:

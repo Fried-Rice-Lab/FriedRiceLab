@@ -10,7 +10,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as f
 
-from archs.utils._conv import Conv2d1x1, Conv2d3x3
+from archs.utils._conv import Conv2d1x1
+from archs.utils._conv import Conv2d3x3
 
 __all__ = ['DistBackbone', 'TransformerGroup', 'UBackbone', 'Upsampler']
 
@@ -28,7 +29,8 @@ class DistBackbone(nn.Module):
             rema_layer(planes, planes, **rema_layer_kwargs)
             for _ in range(dist_num + 1)
         ])
-        self.rema_tail = rema_layer(planes, planes, **rema_layer_kwargs)  # useless ?
+        self.rema_tail = rema_layer(
+            planes, planes, **rema_layer_kwargs)  # useless ?
         # self.rema_tail = nn.Identity(planes, dist_planes, **rema_layer_kwargs)
 
         self.dist_layers = nn.ModuleList([
@@ -73,7 +75,8 @@ class TransformerGroup(nn.Module):
 
         self.sa_list = nn.ModuleList(sa_list)
         self.mlp_list = nn.ModuleList(mlp_list)
-        self.conv = nn.Sequential(*conv_list if conv_list is not None else [nn.Identity()])
+        self.conv = nn.Sequential(
+            *conv_list if conv_list is not None else [nn.Identity()])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""
@@ -136,7 +139,8 @@ class UBackbone(nn.Module):
         )
 
         self.decoder_heads = nn.ModuleList(
-            [_DecoderHead(planes * (2 ** (i + 1))) for i in range(self.stage_num)][::-1]
+            [_DecoderHead(planes * (2 ** (i + 1)))
+             for i in range(self.stage_num)][::-1]
         )
         self.decoders = nn.ModuleList(
             [nn.Sequential(
@@ -146,8 +150,10 @@ class UBackbone(nn.Module):
 
     def check_image_size(self, x: torch.Tensor) -> torch.Tensor:
         _, _, h, w = x.size()
-        mod_pad_h = ((2 ** self.stage_num) - h % (2 ** self.stage_num)) % (2 ** self.stage_num)
-        mod_pad_w = ((2 ** self.stage_num) - w % (2 ** self.stage_num)) % (2 ** self.stage_num)
+        mod_pad_h = ((2 ** self.stage_num) - h %
+                     (2 ** self.stage_num)) % (2 ** self.stage_num)
+        mod_pad_w = ((2 ** self.stage_num) - w %
+                     (2 ** self.stage_num)) % (2 ** self.stage_num)
         x = f.pad(x, (0, mod_pad_w, 0, mod_pad_h))
         return x
 
@@ -198,7 +204,8 @@ class Upsampler(nn.Sequential):
                 raise ValueError(f'Upscale {upscale} is not supported.')
             layer_list.append(Conv2d3x3(in_channels, out_channels))
         elif upsample_mode == 'lsr':  # lightweight
-            layer_list.append(Conv2d3x3(in_channels, out_channels * (upscale ** 2)))
+            layer_list.append(
+                Conv2d3x3(in_channels, out_channels * (upscale ** 2)))
             layer_list.append(nn.PixelShuffle(upscale))
         elif upsample_mode == 'denoising' or upsample_mode == 'deblurring' or upsample_mode == 'deraining':
             layer_list.append(Conv2d3x3(in_channels, out_channels))
@@ -212,16 +219,16 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
     module = DistBackbone(planes=20, dist_num=8, dist_rate=0.123,
-                          rema_layer=Conv2d1x1, rema_layer_kwargs={'bias': True},
-                          dist_layer=Conv2d1x1, dist_layer_kwargs={'bias': False},
+                          rema_layer=Conv2d1x1, rema_layer_kwargs={
+                              'bias': True},
+                          dist_layer=Conv2d1x1, dist_layer_kwargs={
+                              'bias': False},
                           act_layer=nn.LeakyReLU, act_layer_kwargs={'negative_slope': 0.05, 'inplace': True})
     print(count_parameters(module))
 
     data = torch.randn(1, 20, 10, 10)
     print(module(data).size())
-
 
     class Conv(nn.Conv2d):
         def __init__(self, in_channels: int, kernel_size: tuple, padding: tuple = (0, 0),
@@ -230,7 +237,6 @@ if __name__ == '__main__':
             super(Conv, self).__init__(in_channels=in_channels, out_channels=in_channels,
                                        kernel_size=kernel_size, stride=(1, 1), padding=padding,
                                        dilation=dilation, groups=groups, bias=bias, **kwargs)
-
 
     u = UBackbone(planes=4,
                   encoder=Conv, encoder_kwargs={'kernel_size': 1, 'padding': 0}, encoder_nums=[2, 2, 2],

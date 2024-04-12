@@ -21,7 +21,8 @@ class Covpool(Function):
         w = x.data.shape[3]
         M = h * w
         x = x.reshape(batchSize, dim, M)
-        I_hat = (-1. / M / M) * torch.ones(M, M, device=x.device) + (1. / M) * torch.eye(M, M, device=x.device)
+        I_hat = (-1. / M / M) * torch.ones(M, M, device=x.device) + \
+            (1. / M) * torch.eye(M, M, device=x.device)
         I_hat = I_hat.view(1, M, M).repeat(batchSize, 1, 1).type(x.dtype)
         y = x.bmm(I_hat).bmm(x.transpose(1, 2))
         ctx.save_for_backward(input, I_hat)
@@ -50,11 +51,14 @@ class Sqrtm(Function):
         batchSize = x.data.shape[0]
         dim = x.data.shape[1]
         dtype = x.dtype
-        I3 = 3.0 * torch.eye(dim, dim, device=x.device).view(1, dim, dim).repeat(batchSize, 1, 1).type(dtype)
+        I3 = 3.0 * torch.eye(dim, dim, device=x.device).view(1,
+                                                             dim, dim).repeat(batchSize, 1, 1).type(dtype)
         normA = (1.0 / 3.0) * x.mul(I3).sum(dim=1).sum(dim=1)
         A = x.div(normA.view(batchSize, 1, 1).expand_as(x))
-        Y = torch.zeros(batchSize, iterN, dim, dim, requires_grad=False, device=x.device)
-        Z = torch.eye(dim, dim, device=x.device).view(1, dim, dim).repeat(batchSize, iterN, 1, 1)
+        Y = torch.zeros(batchSize, iterN, dim, dim,
+                        requires_grad=False, device=x.device)
+        Z = torch.eye(dim, dim, device=x.device).view(
+            1, dim, dim).repeat(batchSize, iterN, 1, 1)
         if iterN < 2:
             ZY = 0.5 * (I3 - A)
             Y[:, 0, :, :] = A.bmm(ZY)
@@ -66,7 +70,9 @@ class Sqrtm(Function):
                 ZY = 0.5 * (I3 - Z[:, i - 1, :, :].bmm(Y[:, i - 1, :, :]))
                 Y[:, i, :, :] = Y[:, i - 1, :, :].bmm(ZY)
                 Z[:, i, :, :] = ZY.bmm(Z[:, i - 1, :, :])
-            ZY = 0.5 * Y[:, iterN - 2, :, :].bmm(I3 - Z[:, iterN - 2, :, :].bmm(Y[:, iterN - 2, :, :]))
+            ZY = 0.5 * \
+                Y[:, iterN - 2, :,
+                    :].bmm(I3 - Z[:, iterN - 2, :, :].bmm(Y[:, iterN - 2, :, :]))
         y = ZY * torch.sqrt(normA).view(batchSize, 1, 1).expand_as(x)
         ctx.save_for_backward(input, A, ZY, normA, Y, Z)
         ctx.iterN = iterN
@@ -80,16 +86,20 @@ class Sqrtm(Function):
         batchSize = x.data.shape[0]
         dim = x.data.shape[1]
         dtype = x.dtype
-        der_postCom = grad_output * torch.sqrt(normA).view(batchSize, 1, 1).expand_as(x)
-        der_postComAux = (grad_output * ZY).sum(dim=1).sum(dim=1).div(2 * torch.sqrt(normA))
-        I3 = 3.0 * torch.eye(dim, dim, device=x.device).view(1, dim, dim).repeat(batchSize, 1, 1).type(dtype)
+        der_postCom = grad_output * \
+            torch.sqrt(normA).view(batchSize, 1, 1).expand_as(x)
+        der_postComAux = (
+            grad_output * ZY).sum(dim=1).sum(dim=1).div(2 * torch.sqrt(normA))
+        I3 = 3.0 * torch.eye(dim, dim, device=x.device).view(1,
+                                                             dim, dim).repeat(batchSize, 1, 1).type(dtype)
         if iterN < 2:
             pass
             # der_NSiter = 0.5 * (der_postCom.bmm(I3 - A) - A.bmm(der_sacleTrace))
         else:
             dldY = 0.5 * (der_postCom.bmm(I3 - Y[:, iterN - 2, :, :].bmm(Z[:, iterN - 2, :, :])) -
                           Z[:, iterN - 2, :, :].bmm(Y[:, iterN - 2, :, :]).bmm(der_postCom))
-            dldZ = -0.5 * Y[:, iterN - 2, :, :].bmm(der_postCom).bmm(Y[:, iterN - 2, :, :])
+            dldZ = -0.5 * Y[:, iterN - 2, :,
+                            :].bmm(der_postCom).bmm(Y[:, iterN - 2, :, :])
             for i in range(iterN - 3, -1, -1):
                 YZ = I3 - Y[:, i, :, :].bmm(Z[:, i, :, :])
                 ZY = Z[:, i, :, :].bmm(Y[:, i, :, :])
@@ -105,9 +115,9 @@ class Sqrtm(Function):
         grad_input = der_NSiter.div(normA.view(batchSize, 1, 1).expand_as(x))
         grad_aux = der_NSiter.mul(x).sum(dim=1).sum(dim=1)
         for i in range(batchSize):
-            grad_input[i, :, :] += (der_postComAux[i] \
+            grad_input[i, :, :] += (der_postComAux[i]
                                     - grad_aux[i] / (normA[i] * normA[i])) \
-                                   * torch.ones(dim, device=x.device).diag()
+                * torch.ones(dim, device=x.device).diag()
         return grad_input, None
 
 
@@ -134,7 +144,8 @@ class Triuvec(Function):
         batchSize = x.data.shape[0]
         dim = x.data.shape[1]
         dtype = x.dtype
-        grad_input = torch.zeros(batchSize, dim, dim, device=x.device, requires_grad=False)
+        grad_input = torch.zeros(
+            batchSize, dim, dim, device=x.device, requires_grad=False)
         grad_input = grad_input.reshape(batchSize, dim * dim)
         for i in range(batchSize):
             grad_input[i, index] = grad_output[i, :].reshape(index.size(), 1)
@@ -180,8 +191,10 @@ class BasicBlock(nn.Sequential):
             in_channels, out_channels, kernel_size,
             padding=(kernel_size // 2), stride=stride, bias=bias)
         ]
-        if bn: m.append(nn.BatchNorm2d(out_channels))
-        if act is not None: m.append(act)
+        if bn:
+            m.append(nn.BatchNorm2d(out_channels))
+        if act is not None:
+            m.append(act)
         super(BasicBlock, self).__init__(*m)
 
 
@@ -194,8 +207,10 @@ class ResBlock(nn.Module):
         m = []
         for i in range(2):
             m.append(conv(n_feat, n_feat, kernel_size, bias=bias))
-            if bn: m.append(nn.BatchNorm2d(n_feat))
-            if i == 0: m.append(act)
+            if bn:
+                m.append(nn.BatchNorm2d(n_feat))
+            if i == 0:
+                m.append(act)
 
         self.body = nn.Sequential(*m)
         self.res_scale = res_scale
@@ -215,20 +230,24 @@ class Upsampler(nn.Sequential):
             for _ in range(int(math.log(scale, 2))):
                 m.append(conv(n_feat, 4 * n_feat, 3, bias))
                 m.append(nn.PixelShuffle(2))
-                if bn: m.append(nn.BatchNorm2d(n_feat))
-                if act: m.append(act())
+                if bn:
+                    m.append(nn.BatchNorm2d(n_feat))
+                if act:
+                    m.append(act())
         elif scale == 3:
             m.append(conv(n_feat, 9 * n_feat, 3, bias))
             m.append(nn.PixelShuffle(3))
-            if bn: m.append(nn.BatchNorm2d(n_feat))
-            if act: m.append(act())
+            if bn:
+                m.append(nn.BatchNorm2d(n_feat))
+            if act:
+                m.append(act())
         else:
             raise NotImplementedError
 
         super(Upsampler, self).__init__(*m)
 
 
-## add SELayer
+# add SELayer
 class SELayer(nn.Module):
     def __init__(self, channel, reduction=16):
         super(SELayer, self).__init__()
@@ -246,7 +265,7 @@ class SELayer(nn.Module):
         return x * y
 
 
-## add SEResBlock
+# add SEResBlock
 class SEResBlock(nn.Module):
     def __init__(
             self, conv, n_feat, kernel_size, reduction,
@@ -256,8 +275,10 @@ class SEResBlock(nn.Module):
         modules_body = []
         for i in range(2):
             modules_body.append(conv(n_feat, n_feat, kernel_size, bias=bias))
-            if bn: modules_body.append(nn.BatchNorm2d(n_feat))
-            if i == 0: modules_body.append(act)
+            if bn:
+                modules_body.append(nn.BatchNorm2d(n_feat))
+            if i == 0:
+                modules_body.append(act)
         modules_body.append(SELayer(n_feat, reduction))
         self.body = nn.Sequential(*modules_body)
         self.res_scale = res_scale
@@ -275,7 +296,8 @@ class _NonLocalBlockND(nn.Module):
                  sub_sample=True, bn_layer=True):
         super(_NonLocalBlockND, self).__init__()
         assert dimension in [1, 2, 3]
-        assert mode in ['embedded_gaussian', 'gaussian', 'dot_product', 'concatenation']
+        assert mode in ['embedded_gaussian',
+                        'gaussian', 'dot_product', 'concatenation']
 
         # print('Dimension: %d, mode: %s' % (dimension, mode))
 
@@ -505,7 +527,7 @@ class NONLocalBlock2D(_NonLocalBlockND):
                                               bn_layer=bn_layer)
 
 
-## Channel Attention (CA) Layer
+# Channel Attention (CA) Layer
 class CALayer(nn.Module):
     def __init__(self, channel, reduction=8):
         super(CALayer, self).__init__()
@@ -533,7 +555,7 @@ class CALayer(nn.Module):
         return y_ave
 
 
-## second-order Channel attention (SOCA)
+# second-order Channel attention (SOCA)
 class SOCA(nn.Module):
     def __init__(self, channel, reduction=8):
         super(SOCA, self).__init__()
@@ -595,7 +617,7 @@ class Nonlocal_CA(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        ## divide feature map into 4 part
+        # divide feature map into 4 part
         batch_size, C, H, W = x.shape
         H1 = int(H / 2)
         W1 = int(W / 2)
@@ -618,7 +640,7 @@ class Nonlocal_CA(nn.Module):
         return nonlocal_feat
 
 
-## Residual  Block (RB)
+# Residual  Block (RB)
 class RB(nn.Module):
     def __init__(self, conv, n_feat, kernel_size, reduction, bias=True, bn=False, act=nn.ReLU(inplace=True),
                  res_scale=1, dilation=2):
@@ -632,7 +654,8 @@ class RB(nn.Module):
 
         self.conv_first = nn.Sequential(conv(n_feat, n_feat, kernel_size, bias=bias),
                                         act,
-                                        conv(n_feat, n_feat, kernel_size, bias=bias)
+                                        conv(n_feat, n_feat,
+                                             kernel_size, bias=bias)
                                         )
 
         self.res_scale = res_scale
@@ -644,12 +667,12 @@ class RB(nn.Module):
         return y
 
 
-## Local-source Residual Attention Group (LSRARG)
+# Local-source Residual Attention Group (LSRARG)
 class LSRAG(nn.Module):
     def __init__(self, conv, n_feat, kernel_size, reduction, act, res_scale, n_resblocks):
         super(LSRAG, self).__init__()
         ##
-        self.rcab = nn.ModuleList([RB(conv, n_feat, kernel_size, reduction, \
+        self.rcab = nn.ModuleList([RB(conv, n_feat, kernel_size, reduction,
                                       bias=True, bn=False, act=nn.ReLU(inplace=True), res_scale=1) for _ in
                                    range(n_resblocks)])
         self.soca = (SOCA(n_feat, reduction=reduction))
@@ -681,7 +704,7 @@ class LSRAG(nn.Module):
         # y_pre = y_pre + x
         # return y_pre
 
-        ## share-source skip connection
+        # share-source skip connection
 
         for i, l in enumerate(self.rcab):
             # x = l(x) + self.gamma*residual
@@ -771,7 +794,6 @@ class SAN(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = SAN(4)
     print(count_parameters(net))

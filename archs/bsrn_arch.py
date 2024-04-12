@@ -9,7 +9,11 @@ import torch.nn as nn
 import torch.nn.functional as f
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, CCA, Upsampler, DWConv2d
+from archs.utils import CCA
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import DWConv2d
+from archs.utils import Upsampler
 
 
 class DWConv2d33(DWConv2d):
@@ -98,7 +102,8 @@ class ESA(nn.Module):
                                         mode='bilinear', align_corners=False)
 
         # Conv-1
-        tail_output = self.tail_conv(upsample_output + self.useless_conv(head_output))
+        tail_output = self.tail_conv(
+            upsample_output + self.useless_conv(head_output))
         # Sigmoid
         sig_output = torch.sigmoid(tail_output)
 
@@ -216,8 +221,8 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
-    net = BSRN(upscale=4, planes=64, num_modules=8, num_times=4, conv_type='bsconv_s')
+    net = BSRN(upscale=4, planes=64, num_modules=8,
+               num_times=4, conv_type='bsconv_s')
     print(count_parameters(net))
 
     data = torch.randn(1, 3, 64, 64)

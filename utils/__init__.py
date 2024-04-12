@@ -1,6 +1,8 @@
-from .analyse_tool import get_model_flops, get_model_activation
+from .analyse_tool import get_model_activation
+from .analyse_tool import get_model_flops
 from .interpret_tool import get_model_interpretation
-from .misc import make_exp_dirs, mkdir_and_rename
+from .misc import make_exp_dirs
+from .misc import mkdir_and_rename
 from .options import parse_options
 
 __all__ = [

@@ -4,12 +4,14 @@
 # Implemented/Modified by Fried Rice Lab (https://github.com/Fried-Rice-Lab)
 # -------------------------------------------------------------------------------------
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as f
 from einops import rearrange
 
-from ._conv import Conv2d1x1, Conv2d3x3
+from ._conv import Conv2d1x1
+from ._conv import Conv2d3x3
 
 __all__ = ['ChannelAttention', 'SpatialAttention', 'PixelAttention',
            'SABase4D', 'CrissCrossAttention',
@@ -118,8 +120,10 @@ class SABase4D(nn.Module):
         else:
             self.shift_list = ((0, 0),) * len(window_list)
 
-        self.attn = nn.Sequential(*attn_layer if attn_layer is not None else [nn.Identity()])
-        self.proj = nn.Sequential(*proj_layer if proj_layer is not None else [nn.Identity()])
+        self.attn = nn.Sequential(
+            *attn_layer if attn_layer is not None else [nn.Identity()])
+        self.proj = nn.Sequential(
+            *proj_layer if proj_layer is not None else [nn.Identity()])
 
     @staticmethod
     def check_image_size(x: torch.Tensor, window_size: tuple) -> torch.Tensor:
@@ -143,7 +147,8 @@ class SABase4D(nn.Module):
         _, C, _, _ = qkv.size()
 
         # split channels
-        qkv_list = torch.split(qkv, [C // len(self.window_list)] * len(self.window_list), dim=1)
+        qkv_list = torch.split(
+            qkv, [C // len(self.window_list)] * len(self.window_list), dim=1)
 
         output_list = list()
         if self.return_attns:
@@ -155,7 +160,8 @@ class SABase4D(nn.Module):
 
             # roooll!
             if shift_size != (0, 0):
-                attn_slice = torch.roll(attn_slice, shifts=shift_size, dims=(2, 3))
+                attn_slice = torch.roll(
+                    attn_slice, shifts=shift_size, dims=(2, 3))
 
             # cal attn
             _, _, H, W = attn_slice.size()
@@ -175,7 +181,8 @@ class SABase4D(nn.Module):
 
             # roooll back!
             if shift_size != (0, 0):
-                output = torch.roll(output, shifts=(-shift_size[0], -shift_size[1]), dims=(2, 3))
+                output = torch.roll(
+                    output, shifts=(-shift_size[0], -shift_size[1]), dims=(2, 3))
 
             output_list.append(output[:, :, :h, :w])
 
@@ -200,8 +207,10 @@ class CrissCrossAttention(nn.Module):
     def __init__(self, planes: int, reduction: int = 8) -> None:
         super(CrissCrossAttention, self).__init__()
 
-        self.q = Conv2d1x1(in_channels=planes, out_channels=planes // reduction)
-        self.k = Conv2d1x1(in_channels=planes, out_channels=planes // reduction)
+        self.q = Conv2d1x1(in_channels=planes,
+                           out_channels=planes // reduction)
+        self.k = Conv2d1x1(in_channels=planes,
+                           out_channels=planes // reduction)
         self.v = Conv2d1x1(in_channels=planes, out_channels=planes)
 
         self.gamma = nn.Parameter(torch.zeros(1))
@@ -215,9 +224,11 @@ class CrissCrossAttention(nn.Module):
 
         proj_query = self.q(x)  # b c h w -> b c/8 h w
         proj_query_h = proj_query.permute(0, 3, 1, 2). \
-            contiguous().view(b * w, -1, h).permute(0, 2, 1)  # b c/8 h w -> b w c/8 h -> b*w c/8 h -> b*w h c/8
+            contiguous().view(b * w, -1, h).permute(0, 2,
+                                                    1)  # b c/8 h w -> b w c/8 h -> b*w c/8 h -> b*w h c/8
         proj_query_w = proj_query.permute(0, 2, 1, 3). \
-            contiguous().view(b * h, -1, w).permute(0, 2, 1)  # b c/8 h w -> b h c/8 w -> b*h c/8 w -> b*h w c/8
+            contiguous().view(b * h, -1, w).permute(0, 2,
+                                                    1)  # b c/8 h w -> b h c/8 w -> b*h c/8 w -> b*h w c/8
 
         proj_key = self.k(x)  # b c h w -> b c/8 h w
         proj_key_h = proj_key.permute(0, 3, 1, 2). \
@@ -231,19 +242,28 @@ class CrissCrossAttention(nn.Module):
         proj_value_w = proj_value.permute(0, 2, 1, 3). \
             contiguous().view(b * h, -1, w)  # b c h w -> b h c w -> b*h c w
 
-        energy_h = torch.bmm(proj_query_h, proj_key_h)  # b*w h c/8 @ b*w c/8 h -> b*w h h
-        energy_h = energy_h + self.inf(b, h, w, x.device)  # b*w h h + b*w h h -> b*w h h
-        energy_h = energy_h.view(b, w, h, h).permute(0, 2, 1, 3)  # b*w h h -> b w h h -> b h w h
+        # b*w h c/8 @ b*w c/8 h -> b*w h h
+        energy_h = torch.bmm(proj_query_h, proj_key_h)
+        # b*w h h + b*w h h -> b*w h h
+        energy_h = energy_h + self.inf(b, h, w, x.device)
+        energy_h = energy_h.view(b, w, h, h).permute(
+            0, 2, 1, 3)  # b*w h h -> b w h h -> b h w h
 
-        energy_w = torch.bmm(proj_query_w, proj_key_w).view(b, h, w, w)  # b*h w c/8 @ b*h c/8 w -> b*h w w -> b h w w
+        energy_w = torch.bmm(proj_query_w, proj_key_w).view(
+            b, h, w, w)  # b*h w c/8 @ b*h c/8 w -> b*h w w -> b h w w
 
-        concate = f.softmax(torch.cat([energy_h, energy_w], 3), dim=3)  # b h w h + b h w w -> b h w (h + w)
+        # b h w h + b h w w -> b h w (h + w)
+        concate = f.softmax(torch.cat([energy_h, energy_w], 3), dim=3)
 
-        att_h = concate[:, :, :, 0:h].permute(0, 2, 1, 3).contiguous().view(b * w, h, h)  # b*w h h
-        att_w = concate[:, :, :, h:h + w].contiguous().view(b * h, w, w)  # b*h w w
+        att_h = concate[:, :, :, 0:h].permute(
+            0, 2, 1, 3).contiguous().view(b * w, h, h)  # b*w h h
+        att_w = concate[:, :, :, h:h + w].contiguous().view(b * h,
+                                                            w, w)  # b*h w w
 
-        out_h = torch.bmm(proj_value_h, att_h.permute(0, 2, 1)).view(b, w, -1, h).permute(0, 2, 3, 1)
-        out_w = torch.bmm(proj_value_w, att_w.permute(0, 2, 1)).view(b, h, -1, w).permute(0, 2, 1, 3)
+        out_h = torch.bmm(proj_value_h, att_h.permute(
+            0, 2, 1)).view(b, w, -1, h).permute(0, 2, 3, 1)
+        out_w = torch.bmm(proj_value_w, att_w.permute(
+            0, 2, 1)).view(b, h, -1, w).permute(0, 2, 1, 3)
 
         return self.gamma * (out_h + out_w) + x
 
@@ -283,8 +303,10 @@ class CCA(nn.Module):
     @staticmethod
     def contrast(x: torch.Tensor) -> torch.Tensor:
         # cal stdv
-        mean = x.sum(3, keepdim=True).sum(2, keepdim=True) / (x.size(2) * x.size(3))
-        var = (x - mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (x.size(2) * x.size(3))
+        mean = x.sum(3, keepdim=True).sum(
+            2, keepdim=True) / (x.size(2) * x.size(3))
+        var = (x - mean).pow(2).sum(3, keepdim=True).sum(2,
+                                                         keepdim=True) / (x.size(2) * x.size(3))
         stdv = var.pow(0.5)
         # cal pool
         pool = f.adaptive_avg_pool2d(x, 1)
@@ -335,7 +357,8 @@ class ESA(nn.Module):
                                         mode='bilinear', align_corners=False)
 
         # Conv-1
-        tail_output = self.tail_conv(upsample_output + self.useless_conv(head_output))
+        tail_output = self.tail_conv(
+            upsample_output + self.useless_conv(head_output))
         # Sigmoid
         sig_output = torch.sigmoid(tail_output)
 
@@ -345,7 +368,6 @@ class ESA(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = CCA(32)
 

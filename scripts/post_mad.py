@@ -63,7 +63,8 @@ def cal_mean_distance_fast(pkl_path, window_list: tuple = ((12, 12), (12, 12))):
             "Only square window size is supported now."
 
         # get distance matrix
-        distance_matrix = compute_distance_matrix(window_size[0] * window_size[1])
+        distance_matrix = compute_distance_matrix(
+            window_size[0] * window_size[1])
         distance_matrix = distance_matrix[np.newaxis, np.newaxis, :]
 
         # make attention_weights weighted by distance matrix

@@ -85,9 +85,10 @@ class WeightNet(nn.Module):
         super(WeightNet, self).__init__()
 
         act = nn.ReLU(inplace=True)
-        wn = lambda x: nn.utils.weight_norm(x)
+        def wn(x): return nn.utils.weight_norm(x)
 
-        rgb_mean = torch.FloatTensor([0.4488, 0.4371, 0.4040]).view([1, 3, 1, 1])
+        rgb_mean = torch.FloatTensor(
+            [0.4488, 0.4371, 0.4040]).view([1, 3, 1, 1])
         self.register_buffer('rgb_mean', rgb_mean)
 
         self.head = nn.Sequential(
@@ -127,7 +128,8 @@ class ComponentDecConv(nn.Module):
         self.register_buffer('weight', kernel)
 
     def forward(self, x):
-        out = F.conv2d(x, weight=self.weight, bias=None, stride=1, padding=0, groups=1)
+        out = F.conv2d(x, weight=self.weight, bias=None,
+                       stride=1, padding=0, groups=1)
 
         return out
 
@@ -149,15 +151,18 @@ class LAPAR(nn.Module):
     def forward(self, x, gt=None):
         B, C, H, W = x.size()
 
-        bic = F.interpolate(x, scale_factor=self.s, mode='bicubic', align_corners=False)
+        bic = F.interpolate(x, scale_factor=self.s,
+                            mode='bicubic', align_corners=False)
         pad = self.k_size // 2
         x_pad = F.pad(bic, pad=(pad, pad, pad, pad), mode='reflect')
         pad_H, pad_W = x_pad.size()[2:]
         x_pad = x_pad.view(B * 3, 1, pad_H, pad_W)
-        x_com = self.decom_conv(x_pad).view(B, 3, -1, self.s * H, self.s * W)  # B, 3, N_K, Hs, Ws
+        x_com = self.decom_conv(x_pad).view(
+            B, 3, -1, self.s * H, self.s * W)  # B, 3, N_K, Hs, Ws
 
         weight = self.w_conv(x)
-        weight = weight.view(B, 1, -1, self.s * H, self.s * W)  # B, 1, N_K, Hs, Ws
+        weight = weight.view(B, 1, -1, self.s * H,
+                             self.s * W)  # B, 1, N_K, Hs, Ws
 
         out = torch.sum(weight * x_com, dim=2)
 
@@ -171,7 +176,6 @@ class LAPAR(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     # LAPAR-A_x4
     net = LAPAR(upscale=4, kernel_size=5, kernel_path='../modelzoo/LAPAR/kernel/kernel_72_k5.pkl',

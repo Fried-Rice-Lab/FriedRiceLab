@@ -1,8 +1,12 @@
 import math
+
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import Betas2, OptFloat, OptLossClosure, Params
+from .types import Betas2
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 __all__ = ('DiffGrad',)
 
@@ -134,9 +138,9 @@ class DiffGrad(Optimizer):
                 exp_avg1 = exp_avg * dfc
 
                 step_size = (
-                        group['lr']
-                        * math.sqrt(bias_correction2)
-                        / bias_correction1
+                    group['lr']
+                    * math.sqrt(bias_correction2)
+                    / bias_correction1
                 )
 
                 p.data.addcdiv_(exp_avg1, denom, value=-step_size)

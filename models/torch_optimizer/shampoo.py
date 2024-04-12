@@ -1,7 +1,9 @@
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import OptFloat, OptLossClosure, Params
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 
 def _matrix_power(matrix: torch.Tensor, power: float) -> torch.Tensor:
@@ -100,8 +102,8 @@ class Shampoo(Optimizer):
                     for dim_id, dim in enumerate(grad.size()):
                         # precondition matrices
                         state['precond_{}'.format(dim_id)] = group[
-                                                                 'epsilon'
-                                                             ] * torch.eye(dim, out=grad.new(dim, dim))
+                            'epsilon'
+                        ] * torch.eye(dim, out=grad.new(dim, dim))
                         state[
                             'inv_precond_{dim_id}'.format(dim_id=dim_id)
                         ] = grad.new(dim, dim).zero_()

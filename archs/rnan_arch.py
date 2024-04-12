@@ -36,8 +36,10 @@ class BasicBlock(nn.Sequential):
             in_channels, out_channels, kernel_size,
             padding=(kernel_size // 2), stride=stride, bias=bias)
         ]
-        if bn: m.append(nn.BatchNorm2d(out_channels))
-        if act is not None: m.append(act)
+        if bn:
+            m.append(nn.BatchNorm2d(out_channels))
+        if act is not None:
+            m.append(act)
         super(BasicBlock, self).__init__(*m)
 
 
@@ -50,8 +52,10 @@ class ResBlock(nn.Module):
         m = []
         for i in range(2):
             m.append(conv(n_feat, n_feat, kernel_size, bias=bias))
-            if bn: m.append(nn.BatchNorm2d(n_feat))
-            if i == 0: m.append(act)
+            if bn:
+                m.append(nn.BatchNorm2d(n_feat))
+            if i == 0:
+                m.append(act)
 
         self.body = nn.Sequential(*m)
         self.res_scale = res_scale
@@ -71,13 +75,17 @@ class Upsampler(nn.Sequential):
             for _ in range(int(math.log(scale, 2))):
                 m.append(conv(n_feat, 4 * n_feat, 3, bias))
                 m.append(nn.PixelShuffle(2))
-                if bn: m.append(nn.BatchNorm2d(n_feat))
-                if act: m.append(act())
+                if bn:
+                    m.append(nn.BatchNorm2d(n_feat))
+                if act:
+                    m.append(act())
         elif scale == 3:
             m.append(conv(n_feat, 9 * n_feat, 3, bias))
             m.append(nn.PixelShuffle(3))
-            if bn: m.append(nn.BatchNorm2d(n_feat))
-            if act: m.append(act())
+            if bn:
+                m.append(nn.BatchNorm2d(n_feat))
+            if act:
+                m.append(act())
         else:
             raise NotImplementedError
 
@@ -138,7 +146,7 @@ class NonLocalBlock2D(nn.Module):
         return z
 
 
-## define trunk branch
+# define trunk branch
 class TrunkBranch(nn.Module):
     def __init__(
             self, conv, n_feat, kernel_size,
@@ -164,20 +172,24 @@ class MaskBranchDownUp(nn.Module):
         super(MaskBranchDownUp, self).__init__()
 
         MB_RB1 = list()
-        MB_RB1.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        MB_RB1.append(ResBlock(conv, n_feat, kernel_size, bias=True,
+                      bn=False, act=nn.ReLU(True), res_scale=1))
 
         MB_Down = []
         MB_Down.append(nn.Conv2d(n_feat, n_feat, 3, stride=2, padding=1))
 
         MB_RB2 = []
         for i in range(2):
-            MB_RB2.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+            MB_RB2.append(ResBlock(conv, n_feat, kernel_size,
+                          bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
 
         MB_Up = []
-        MB_Up.append(nn.ConvTranspose2d(n_feat, n_feat, 6, stride=2, padding=2))
+        MB_Up.append(nn.ConvTranspose2d(
+            n_feat, n_feat, 6, stride=2, padding=2))
 
         MB_RB3 = []
-        MB_RB3.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        MB_RB3.append(ResBlock(conv, n_feat, kernel_size, bias=True,
+                      bn=False, act=nn.ReLU(True), res_scale=1))
 
         MB_1x1conv = []
         MB_1x1conv.append(nn.Conv2d(n_feat, n_feat, 1, padding=0, bias=True))
@@ -215,20 +227,24 @@ class NLMaskBranchDownUp(nn.Module):
 
         MB_RB1 = []
         MB_RB1.append(NonLocalBlock2D(n_feat, n_feat // 2))
-        MB_RB1.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        MB_RB1.append(ResBlock(conv, n_feat, kernel_size, bias=True,
+                      bn=False, act=nn.ReLU(True), res_scale=1))
 
         MB_Down = []
         MB_Down.append(nn.Conv2d(n_feat, n_feat, 3, stride=2, padding=1))
 
         MB_RB2 = []
         for i in range(2):
-            MB_RB2.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+            MB_RB2.append(ResBlock(conv, n_feat, kernel_size,
+                          bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
 
         MB_Up = []
-        MB_Up.append(nn.ConvTranspose2d(n_feat, n_feat, 6, stride=2, padding=2))
+        MB_Up.append(nn.ConvTranspose2d(
+            n_feat, n_feat, 6, stride=2, padding=2))
 
         MB_RB3 = []
-        MB_RB3.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        MB_RB3.append(ResBlock(conv, n_feat, kernel_size, bias=True,
+                      bn=False, act=nn.ReLU(True), res_scale=1))
 
         MB_1x1conv = []
         MB_1x1conv.append(nn.Conv2d(n_feat, n_feat, 1, padding=0, bias=True))
@@ -257,21 +273,25 @@ class NLMaskBranchDownUp(nn.Module):
         return mx
 
 
-## define residual attention module
+# define residual attention module
 class ResAttModuleDownUpPlus(nn.Module):
     def __init__(
             self, conv, n_feat, kernel_size,
             bias=True, bn=False, act=nn.ReLU(True), res_scale=1):
         super(ResAttModuleDownUpPlus, self).__init__()
         RA_RB1 = []
-        RA_RB1.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        RA_RB1.append(ResBlock(conv, n_feat, kernel_size, bias=True,
+                      bn=False, act=nn.ReLU(True), res_scale=1))
         RA_TB = []
-        RA_TB.append(TrunkBranch(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        RA_TB.append(TrunkBranch(conv, n_feat, kernel_size,
+                     bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
         RA_MB = []
-        RA_MB.append(MaskBranchDownUp(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        RA_MB.append(MaskBranchDownUp(conv, n_feat, kernel_size,
+                     bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
         RA_tail = []
         for i in range(2):
-            RA_tail.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+            RA_tail.append(ResBlock(conv, n_feat, kernel_size,
+                           bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
 
         self.RA_RB1 = nn.Sequential(*RA_RB1)
         self.RA_TB = nn.Sequential(*RA_TB)
@@ -296,14 +316,18 @@ class NLResAttModuleDownUpPlus(nn.Module):
             bias=True, bn=False, act=nn.ReLU(True), res_scale=1):
         super(NLResAttModuleDownUpPlus, self).__init__()
         RA_RB1 = []
-        RA_RB1.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        RA_RB1.append(ResBlock(conv, n_feat, kernel_size, bias=True,
+                      bn=False, act=nn.ReLU(True), res_scale=1))
         RA_TB = []
-        RA_TB.append(TrunkBranch(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        RA_TB.append(TrunkBranch(conv, n_feat, kernel_size,
+                     bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
         RA_MB = []
-        RA_MB.append(NLMaskBranchDownUp(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+        RA_MB.append(NLMaskBranchDownUp(conv, n_feat, kernel_size,
+                     bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
         RA_tail = []
         for i in range(2):
-            RA_tail.append(ResBlock(conv, n_feat, kernel_size, bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
+            RA_tail.append(ResBlock(conv, n_feat, kernel_size,
+                           bias=True, bn=False, act=nn.ReLU(True), res_scale=1))
 
         self.RA_RB1 = nn.Sequential(*RA_RB1)
         self.RA_TB = nn.Sequential(*RA_TB)
@@ -429,7 +453,6 @@ class RNAN(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = RNAN(upscale=4)
     print(count_parameters(net))

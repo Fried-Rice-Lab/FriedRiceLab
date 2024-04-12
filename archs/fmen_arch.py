@@ -9,7 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, Upsampler
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import Upsampler
 
 
 def pad_tensor(t, pattern):
@@ -55,7 +57,8 @@ class RRRB(nn.Module):
             self.rep_conv = Conv2d3x3(n_feats, n_feats)
         else:
             self.expand_conv = Conv2d1x1(n_feats, ratio * n_feats)
-            self.fea_conv = nn.Conv2d(ratio * n_feats, ratio * n_feats, 3, 1, 0)
+            self.fea_conv = nn.Conv2d(
+                ratio * n_feats, ratio * n_feats, 3, 1, 0)
             self.reduce_conv = Conv2d1x1(ratio * n_feats, n_feats)
 
     def forward(self, x):
@@ -133,7 +136,8 @@ class HFAB(nn.Module):
             self.squeeze = nn.Conv2d(n_feats, mid_feats, 3, 1, 0)
             self.excitate = nn.Conv2d(mid_feats, n_feats, 3, 1, 0)
 
-        convs = [ERB(mid_feats, ratio, deploy=deploy) for _ in range(up_blocks)]
+        convs = [ERB(mid_feats, ratio, deploy=deploy)
+                 for _ in range(up_blocks)]
         self.convs = nn.Sequential(*convs)
         self.sigmoid = nn.Sigmoid()
 
@@ -192,7 +196,8 @@ class FMEN(nn.Module):
         # warm up
         self.warmup = nn.Sequential(
             Conv2d3x3(n_feats, n_feats),
-            HFAB(n_feats, up_blocks[0], mid_feats - 4, attention_expand_ratio, deploy=deploy)
+            HFAB(n_feats, up_blocks[0], mid_feats - 4,
+                 attention_expand_ratio, deploy=deploy)
         )
 
         # define body module
@@ -231,10 +236,11 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
-    net = FMEN(upscale=4, num_in_ch=3, num_out_ch=3, task='lsr', up_blocks=[2, 1, 1, 1, 1], deploy=False)
+    net = FMEN(upscale=4, num_in_ch=3, num_out_ch=3, task='lsr',
+               up_blocks=[2, 1, 1, 1, 1], deploy=False)
     print(count_parameters(net))
-    net = FMEN(upscale=4, num_in_ch=3, num_out_ch=3, task='lsr', up_blocks=[2, 1, 1, 1, 1], deploy=True)
+    net = FMEN(upscale=4, num_in_ch=3, num_out_ch=3, task='lsr',
+               up_blocks=[2, 1, 1, 1, 1], deploy=True)
     print(count_parameters(net))
 
     data = torch.randn(1, 3, 120, 80)

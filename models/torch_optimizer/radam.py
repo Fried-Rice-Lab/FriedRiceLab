@@ -1,10 +1,13 @@
+import math
 import warnings
 
-import math
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import Betas2, OptFloat, OptLossClosure, Params
+from .types import Betas2
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 __all__ = ('RAdam',)
 
@@ -156,24 +159,24 @@ class RAdam(Optimizer):
                     beta2_t = beta2 ** state['step']
                     N_sma_max = 2 / (1 - beta2) - 1
                     N_sma = N_sma_max - 2 * state['step'] * beta2_t / (
-                            1 - beta2_t
+                        1 - beta2_t
                     )
                     buffered[1] = N_sma
 
                     # more conservative since it's an approximated value
                     if N_sma >= 5:
                         step_size = (
-                                lr
-                                * math.sqrt(
-                            (1 - beta2_t)
-                            * (N_sma - 4)
-                            / (N_sma_max - 4)
-                            * (N_sma - 2)
-                            / N_sma
-                            * N_sma_max
-                            / (N_sma_max - 2)
-                        )
-                                / (1 - beta1 ** state['step'])
+                            lr
+                            * math.sqrt(
+                                    (1 - beta2_t)
+                                * (N_sma - 4)
+                                / (N_sma_max - 4)
+                                * (N_sma - 2)
+                                / N_sma
+                                * N_sma_max
+                                / (N_sma_max - 2)
+                            )
+                            / (1 - beta1 ** state['step'])
                         )
                     else:
                         step_size = lr / (1 - beta1 ** state['step'])

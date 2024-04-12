@@ -12,7 +12,8 @@ from basicsr.utils.registry import ARCH_REGISTRY
 from einops import rearrange
 from torch import nn
 
-from archs.utils import Conv2d1x1, Conv2d3x3
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
 
 
 class PointMlp(nn.Module):
@@ -121,7 +122,8 @@ class SMLayer(nn.Module):
         self.norm1 = LayerNorm(dim)
         self.norm2 = LayerNorm(dim)
 
-        self.spatial = nn.Conv2d(dim, dim, kernel_size, 1, kernel_size // 2, groups=dim)
+        self.spatial = nn.Conv2d(
+            dim, dim, kernel_size, 1, kernel_size // 2, groups=dim)
 
         self.mlp1 = SplitPointMlp(dim, mlp_ratio)
         self.mlp2 = SplitPointMlp(dim, mlp_ratio)
@@ -209,7 +211,8 @@ class ShuffleMixer(nn.Module):
         x = self.upsapling(x)
         x = self.tail(x)
 
-        base = F.interpolate(base, scale_factor=self.scale, mode='bilinear', align_corners=False)
+        base = F.interpolate(base, scale_factor=self.scale,
+                             mode='bilinear', align_corners=False)
         return x + base
 
 
@@ -217,8 +220,8 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
-    net = ShuffleMixer(dim=64, kernel_size=7, n_blocks=5, mlp_ratio=2, upscale=4)
+    net = ShuffleMixer(dim=64, kernel_size=7, n_blocks=5,
+                       mlp_ratio=2, upscale=4)
     print(count_parameters(net))
 
     data = torch.randn(1, 3, 120, 80)

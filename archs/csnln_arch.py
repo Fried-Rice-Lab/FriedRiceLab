@@ -58,9 +58,11 @@ class ResidualConvBlock(nn.Module):
     def __init__(self, channels: int, kernel_size: int, stride: int, padding: int) -> None:
         super(ResidualConvBlock, self).__init__()
         self.rcb = nn.Sequential(
-            nn.Conv2d(channels, channels, (kernel_size, kernel_size), (stride, stride), (padding, padding)),
+            nn.Conv2d(channels, channels, (kernel_size, kernel_size),
+                      (stride, stride), (padding, padding)),
             nn.PReLU(),
-            nn.Conv2d(channels, channels, (kernel_size, kernel_size), (stride, stride), (padding, padding)),
+            nn.Conv2d(channels, channels, (kernel_size, kernel_size),
+                      (stride, stride), (padding, padding)),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -79,7 +81,8 @@ def extract_image_patches(images, kernel_size: list, stride: list, rates: list):
 
     images = same_padding(images, kernel_size, stride, rates)
     # [N, C*k*k, L], L is the total number of such blocks
-    patches = torch.nn.Unfold(kernel_size=kernel_size, dilation=rates, padding=(0, 0), stride=stride)(images)
+    patches = torch.nn.Unfold(
+        kernel_size=kernel_size, dilation=rates, padding=(0, 0), stride=stride)(images)
 
     return patches
 
@@ -115,7 +118,8 @@ class CrossScaleAttention(nn.Module):
         assembly = self.conv_assembly(x)
 
         conv1 = self.conv1(x)
-        conv2 = self.conv2(F.interpolate(x, scale_factor=1. / self.scale, mode="bilinear"))
+        conv2 = self.conv2(F.interpolate(
+            x, scale_factor=1. / self.scale, mode="bilinear"))
 
         assembly_shape = list(assembly.size())
 
@@ -126,22 +130,26 @@ class CrossScaleAttention(nn.Module):
         # raw_w is extracted for reconstruction. [N, C*k*k, L]
         assembly_weight = extract_image_patches(assembly,
                                                 kernel_size=[kernel, kernel],
-                                                stride=[self.stride * self.scale, self.stride * self.scale],
+                                                stride=[
+                                                    self.stride * self.scale, self.stride * self.scale],
                                                 rates=[1, 1])
         # assembly_weight_shape: [N, C, k, k, L]
-        assembly_weight = assembly_weight.view(assembly_shape[0], assembly_shape[1], kernel, kernel, -1)
+        assembly_weight = assembly_weight.view(
+            assembly_shape[0], assembly_shape[1], kernel, kernel, -1)
         # assembly_weight_shape: [N, L, C, k, k]
         assembly_weight = assembly_weight.permute(0, 4, 1, 2, 3)
         assembly_weight_groups = torch.split(assembly_weight, 1, dim=0)
 
         # downscaling X to form Y for cross-scale matching
         conv2_weight = extract_image_patches(conv2,
-                                             kernel_size=[self.kernel_size, self.kernel_size],
+                                             kernel_size=[
+                                                 self.kernel_size, self.kernel_size],
                                              stride=[self.stride, self.stride],
                                              rates=[1, 1])
         conv2_shape = list(conv2.size())
         # conv2_weight shape: [N, C, k, k, L]
-        conv2_weight = conv2_weight.view(conv2_shape[0], conv2_shape[1], self.kernel_size, self.kernel_size, -1)
+        conv2_weight = conv2_weight.view(
+            conv2_shape[0], conv2_shape[1], self.kernel_size, self.kernel_size, -1)
         # conv2_weight shape: [N, L, C, k, k]
         conv2_weight = conv2_weight.permute(0, 4, 1, 2, 3)
         conv2_weight_groups = torch.split(conv2_weight, 1, dim=0)
@@ -162,16 +170,19 @@ class CrossScaleAttention(nn.Module):
             conv1_weight_group = same_padding(conv1_weight_group, [self.kernel_size, self.kernel_size], [1, 1],
                                               [1, 1])  # xi:
             # [1, L, H, W] L = conv2_shape[2] * conv2_shape[3]
-            out = F.conv2d(conv1_weight_group, norm_conv2_weight_group, stride=(1, 1))
+            out = F.conv2d(conv1_weight_group,
+                           norm_conv2_weight_group, stride=(1, 1))
 
             # (B=1, C=32 * 32, H=32, W=32)
-            out = out.view(1, conv2_shape[2] * conv2_shape[3], assembly_shape[2], assembly_shape[3])
+            out = out.view(
+                1, conv2_shape[2] * conv2_shape[3], assembly_shape[2], assembly_shape[3])
             # rescale matching score
             out = F.softmax(out * softmax_scale, dim=1)
 
             # deconv for reconsturction
             assembly_weight_group = assembly_weight_group[0]
-            out = F.conv_transpose2d(out, assembly_weight_group, stride=self.stride * self.scale, padding=self.scale)
+            out = F.conv_transpose2d(
+                out, assembly_weight_group, stride=self.stride * self.scale, padding=self.scale)
 
             out = out / 6.
             outs.append(out)
@@ -204,13 +215,15 @@ class NonLocalAttention(nn.Module):
         assembly = self.conv_assembly(x)
 
         batch_size, channel, height, width = conv1.shape
-        conv1 = conv1.permute(0, 2, 3, 1).view((batch_size, height * width, channel))
+        conv1 = conv1.permute(0, 2, 3, 1).view(
+            (batch_size, height * width, channel))
         conv2 = conv2.view(batch_size, channel, height * width)
 
         score = torch.matmul(conv1, conv2)
         score = F.softmax(score, dim=2)
 
-        assembly = assembly.view(batch_size, -1, height * width).permute(0, 2, 1)
+        assembly = assembly.view(
+            batch_size, -1, height * width).permute(0, 2, 1)
         out = torch.matmul(score, assembly)
         out = out.permute(0, 2, 1).view(batch_size, -1, height, width)
 
@@ -236,10 +249,12 @@ class MultiSourceProjection(nn.Module):
                                                          scale=upscale_factor)
         self.non_local_attention = NonLocalAttention(channels=128, reduction=2)
         self.upsampling = nn.Sequential(
-            nn.ConvTranspose2d(channels, channels, de_kernel_size, (stride, stride), (padding, padding)),
+            nn.ConvTranspose2d(channels, channels, de_kernel_size,
+                               (stride, stride), (padding, padding)),
             nn.PReLU(),
         )
-        self.encoder = ResidualConvBlock(channels, kernel_size, 1, kernel_size // 2)
+        self.encoder = ResidualConvBlock(
+            channels, kernel_size, 1, kernel_size // 2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         cross_scale_attention = self.cross_scale_attention(x)
@@ -266,8 +281,10 @@ class SelfExemplarMining(nn.Module):
             stride = 3
             padding = 3
 
-        self.multi_source_projection1 = MultiSourceProjection(channels, kernel_size=kernel_size, scale=scale)
-        self.multi_source_projection2 = MultiSourceProjection(channels, kernel_size=kernel_size, scale=scale)  # !
+        self.multi_source_projection1 = MultiSourceProjection(
+            channels, kernel_size=kernel_size, scale=scale)
+        self.multi_source_projection2 = MultiSourceProjection(
+            channels, kernel_size=kernel_size, scale=scale)  # !
         self.down_conv1 = nn.Sequential(
             nn.Conv2d(channels, channels, (stride_kernel_size, stride_kernel_size), (stride, stride),
                       (padding, padding)),
@@ -300,7 +317,8 @@ class SelfExemplarMining(nn.Module):
         )
 
         self.conv = nn.Sequential(
-            nn.Conv2d(channels, channels, (kernel_size, kernel_size), (1, 1), (kernel_size // 2, kernel_size // 2)),
+            nn.Conv2d(channels, channels, (kernel_size, kernel_size),
+                      (1, 1), (kernel_size // 2, kernel_size // 2)),
             nn.PReLU(),
         )
 
@@ -339,12 +357,14 @@ class CSNLN(nn.Module):
         )
 
         # Self-Exemplars Mining (SEM) Cell
-        self.self_exemplar_mining = SelfExemplarMining(channels=128, kernel_size=3, scale=upscale)
+        self.self_exemplar_mining = SelfExemplarMining(
+            channels=128, kernel_size=3, scale=upscale)
 
         # Final output layer
         self.conv2 = nn.Conv2d(1536, 3, (3, 3), (1, 1), (1, 1))
 
-        self.register_buffer("mean", torch.Tensor([0.4488, 0.4371, 0.4040]).view(1, 3, 1, 1))
+        self.register_buffer("mean", torch.Tensor(
+            [0.4488, 0.4371, 0.4040]).view(1, 3, 1, 1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # The images by subtracting the mean RGB value of the DIV2K dataset.
@@ -366,7 +386,6 @@ class CSNLN(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = CSNLN(upscale=4)
     print(count_parameters(net))

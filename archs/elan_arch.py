@@ -12,7 +12,11 @@ import torch.nn.functional as f
 from basicsr.utils.registry import ARCH_REGISTRY
 from einops import rearrange
 
-from archs.utils import Conv2d1x1, Conv2d3x3, ShiftConv2d1x1, MeanShift, Upsampler
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import MeanShift
+from archs.utils import ShiftConv2d1x1
+from archs.utils import Upsampler
 
 
 class LFE(nn.Module):
@@ -56,7 +60,8 @@ class GMSA(nn.Module):
         self.window_sizes = window_sizes
 
         if pass_attn == 0:
-            self.split_chns = [planes * 2 // 3, planes * 2 // 3, planes * 2 // 3]
+            self.split_chns = [planes * 2 // 3,
+                               planes * 2 // 3, planes * 2 // 3]
             self.project_inp = nn.Sequential(
                 Conv2d1x1(planes, planes * 2),
                 nn.BatchNorm2d(planes * 2)
@@ -80,7 +85,8 @@ class GMSA(nn.Module):
             for idx, x_ in enumerate(xs):
                 wsize = self.window_sizes[idx]
                 if self.shifts > 0:
-                    x_ = torch.roll(x_, shifts=(-wsize // 2, -wsize // 2), dims=(2, 3))
+                    x_ = torch.roll(
+                        x_, shifts=(-wsize // 2, -wsize // 2), dims=(2, 3))
                 q, v = rearrange(
                     x_, 'b (qv c) (h dh) (w dw) -> qv (b h w) (dh dw) c',
                     qv=2, dh=wsize, dw=wsize
@@ -93,7 +99,8 @@ class GMSA(nn.Module):
                     h=h // wsize, w=w // wsize, dh=wsize, dw=wsize
                 )
                 if self.shifts > 0:
-                    y_ = torch.roll(y_, shifts=(wsize // 2, wsize // 2), dims=(2, 3))
+                    y_ = torch.roll(y_, shifts=(
+                        wsize // 2, wsize // 2), dims=(2, 3))
                 ys.append(y_)
                 atns.append(atn)
             y = torch.cat(ys, dim=1)
@@ -103,7 +110,8 @@ class GMSA(nn.Module):
             for idx, x_ in enumerate(xs):
                 wsize = self.window_sizes[idx]
                 if self.shifts > 0:
-                    x_ = torch.roll(x_, shifts=(-wsize // 2, -wsize // 2), dims=(2, 3))
+                    x_ = torch.roll(
+                        x_, shifts=(-wsize // 2, -wsize // 2), dims=(2, 3))
                 atn = prev_atns[idx]
                 v = rearrange(
                     x_, 'b (c) (h dh) (w dw) -> (b h w) (dh dw) c',
@@ -115,7 +123,8 @@ class GMSA(nn.Module):
                     h=h // wsize, w=w // wsize, dh=wsize, dw=wsize
                 )
                 if self.shifts > 0:
-                    y_ = torch.roll(y_, shifts=(wsize // 2, wsize // 2), dims=(2, 3))
+                    y_ = torch.roll(y_, shifts=(
+                        wsize // 2, wsize // 2), dims=(2, 3))
                 ys.append(y_)
             y = torch.cat(ys, dim=1)
             y = self.project_out(y)
@@ -190,7 +199,8 @@ class ELAN(nn.Module):
         _, _, h, w = x.size()
         wsize = self.window_sizes[0]
         for i in range(1, len(self.window_sizes)):
-            wsize = wsize * self.window_sizes[i] // math.gcd(wsize, self.window_sizes[i])
+            wsize = wsize * \
+                self.window_sizes[i] // math.gcd(wsize, self.window_sizes[i])
         mod_pad_h = (wsize - h % wsize) % wsize
         mod_pad_w = (wsize - w % wsize) % wsize
         x = f.pad(x, (0, mod_pad_w, 0, mod_pad_h), 'reflect')
@@ -223,13 +233,14 @@ if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
     # ELAN
-    net = ELAN(upscale=4, planes=180, window_sizes=(4, 8, 16), num_blocks=36, n_share=0)
+    net = ELAN(upscale=4, planes=180, window_sizes=(
+        4, 8, 16), num_blocks=36, n_share=0)
     print(count_parameters(net))
 
     # ELAN-light
-    net = ELAN(upscale=4, planes=60, window_sizes=(4, 8, 16), num_blocks=24, n_share=1)
+    net = ELAN(upscale=4, planes=60, window_sizes=(
+        4, 8, 16), num_blocks=24, n_share=1)
     print(count_parameters(net))
 
     data = torch.randn(1, 3, 120, 80)

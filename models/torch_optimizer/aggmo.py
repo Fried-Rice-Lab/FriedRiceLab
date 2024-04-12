@@ -1,9 +1,15 @@
-from typing import List, Tuple, Type, TypeVar, Union
+from typing import List
+from typing import Tuple
+from typing import Type
+from typing import TypeVar
+from typing import Union
 
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import OptFloat, OptLossClosure, Params
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 __all__ = ('AggMo',)
 

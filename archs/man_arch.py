@@ -4,13 +4,15 @@
 #
 # Modified by Tianle Liu (tianle.l@outlook.com)
 # ----------------------------------------------------------------------
-
 import torch
 import torch.nn as nn
-
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import LayerNorm4D, Conv2d1x1, Conv2d3x3, MeanShift, Upsampler
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import LayerNorm4D
+from archs.utils import MeanShift
+from archs.utils import Upsampler
 
 
 class GSAU(nn.Module):
@@ -26,11 +28,13 @@ class GSAU(nn.Module):
         i_feats = n_feats * 2
 
         self.Conv1 = Conv2d1x1(n_feats, i_feats)
-        self.DWConv1 = nn.Conv2d(n_feats, n_feats, 7, 1, 7 // 2, groups=n_feats)
+        self.DWConv1 = nn.Conv2d(
+            n_feats, n_feats, 7, 1, 7 // 2, groups=n_feats)
         self.Conv2 = Conv2d1x1(n_feats, n_feats)
 
         self.norm = LayerNorm4D(n_feats)
-        self.scale = nn.Parameter(torch.zeros((1, n_feats, 1, 1)), requires_grad=True)
+        self.scale = nn.Parameter(torch.zeros(
+            (1, n_feats, 1, 1)), requires_grad=True)
 
     def forward(self, x) -> torch.Tensor:
         shortcut = x.clone()
@@ -58,24 +62,34 @@ class MLKA(nn.Module):
         self.n_feats = n_feats
         self.i_feats = i_feats
         self.norm = LayerNorm4D(n_feats)
-        self.scale = nn.Parameter(torch.zeros((1, n_feats, 1, 1)), requires_grad=True)
+        self.scale = nn.Parameter(torch.zeros(
+            (1, n_feats, 1, 1)), requires_grad=True)
 
         self.LKA7 = nn.Sequential(
-            nn.Conv2d(n_feats // 3, n_feats // 3, 7, 1, 7 // 2, groups=n_feats // 3),
-            nn.Conv2d(n_feats // 3, n_feats // 3, 9, 1, (9 // 2) * 4, groups=n_feats // 3, dilation=4),
+            nn.Conv2d(n_feats // 3, n_feats // 3, 7,
+                      1, 7 // 2, groups=n_feats // 3),
+            nn.Conv2d(n_feats // 3, n_feats // 3, 9, 1, (9 // 2)
+                      * 4, groups=n_feats // 3, dilation=4),
             nn.Conv2d(n_feats // 3, n_feats // 3, 1, 1, 0))
         self.LKA5 = nn.Sequential(
-            nn.Conv2d(n_feats // 3, n_feats // 3, 5, 1, 5 // 2, groups=n_feats // 3),
-            nn.Conv2d(n_feats // 3, n_feats // 3, 7, 1, (7 // 2) * 3, groups=n_feats // 3, dilation=3),
+            nn.Conv2d(n_feats // 3, n_feats // 3, 5,
+                      1, 5 // 2, groups=n_feats // 3),
+            nn.Conv2d(n_feats // 3, n_feats // 3, 7, 1, (7 // 2)
+                      * 3, groups=n_feats // 3, dilation=3),
             nn.Conv2d(n_feats // 3, n_feats // 3, 1, 1, 0))
         self.LKA3 = nn.Sequential(
-            nn.Conv2d(n_feats // 3, n_feats // 3, 3, 1, 1, groups=n_feats // 3),
-            nn.Conv2d(n_feats // 3, n_feats // 3, 5, 1, (5 // 2) * 2, groups=n_feats // 3, dilation=2),
+            nn.Conv2d(n_feats // 3, n_feats // 3,
+                      3, 1, 1, groups=n_feats // 3),
+            nn.Conv2d(n_feats // 3, n_feats // 3, 5, 1, (5 // 2)
+                      * 2, groups=n_feats // 3, dilation=2),
             nn.Conv2d(n_feats // 3, n_feats // 3, 1, 1, 0))
 
-        self.X3 = nn.Conv2d(n_feats // 3, n_feats // 3, 3, 1, 1, groups=n_feats // 3)
-        self.X5 = nn.Conv2d(n_feats // 3, n_feats // 3, 5, 1, 5 // 2, groups=n_feats // 3)
-        self.X7 = nn.Conv2d(n_feats // 3, n_feats // 3, 7, 1, 7 // 2, groups=n_feats // 3)
+        self.X3 = nn.Conv2d(n_feats // 3, n_feats // 3,
+                            3, 1, 1, groups=n_feats // 3)
+        self.X5 = nn.Conv2d(n_feats // 3, n_feats // 3, 5,
+                            1, 5 // 2, groups=n_feats // 3)
+        self.X7 = nn.Conv2d(n_feats // 3, n_feats // 3, 7,
+                            1, 7 // 2, groups=n_feats // 3)
 
         self.proj_first = Conv2d1x1(n_feats, i_feats)
         self.proj_last = Conv2d1x1(n_feats, n_feats)
@@ -87,7 +101,8 @@ class MLKA(nn.Module):
         x = self.proj_first(x)
         a, x = torch.chunk(x, 2, dim=1)
         a_1, a_2, a_3 = torch.chunk(a, 3, dim=1)
-        a = torch.cat([self.LKA3(a_1) * self.X3(a_1), self.LKA5(a_2) * self.X5(a_2), self.LKA7(a_3) * self.X7(a_3)], dim=1)
+        a = torch.cat([self.LKA3(a_1) * self.X3(a_1), self.LKA5(a_2)
+                      * self.X5(a_2), self.LKA7(a_3) * self.X7(a_3)], dim=1)
         x = self.proj_last(x * a)
 
         return x * self.scale + shortcut
@@ -131,7 +146,8 @@ class LKAT(nn.Module):
 
         self.att = nn.Sequential(
             nn.Conv2d(n_feats, n_feats, 7, 1, 7 // 2, groups=n_feats),
-            nn.Conv2d(n_feats, n_feats, 9, 1, (9 // 2) * 3, groups=n_feats, dilation=3),
+            nn.Conv2d(n_feats, n_feats, 9, 1, (9 // 2)
+                      * 3, groups=n_feats, dilation=3),
             nn.Conv2d(n_feats, n_feats, 1, 1, 0))
 
         self.conv1 = Conv2d1x1(n_feats, n_feats)
@@ -213,8 +229,10 @@ if __name__ == '__main__':
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     # MAN-light
-    net = MAN(upscale=4,  n_resblocks=24, n_feats=60, num_in_ch=3, num_out_ch=3, task='lsr')
+    net = MAN(upscale=4,  n_resblocks=24, n_feats=60,
+              num_in_ch=3, num_out_ch=3, task='lsr')
     print(count_parameters(net))
 
     data = torch.randn(1, 3, 120, 80)
     print(net(data).size())
+

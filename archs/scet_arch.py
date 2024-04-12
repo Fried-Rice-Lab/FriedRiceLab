@@ -68,19 +68,21 @@ class LayerNorm(nn.Module):
         return to_4d(self.body(to_3d(x)), h, w)
 
 
-## Gated-Dconv Feed-Forward Network (GDFN)
+# Gated-Dconv Feed-Forward Network (GDFN)
 class GFeedForward(nn.Module):
     def __init__(self, dim, ffn_expansion_factor, bias):
         super(GFeedForward, self).__init__()
 
         hidden_features = int(dim * ffn_expansion_factor)
 
-        self.project_in = nn.Conv2d(dim, hidden_features * 2, kernel_size=1, bias=bias)
+        self.project_in = nn.Conv2d(
+            dim, hidden_features * 2, kernel_size=1, bias=bias)
 
         self.dwconv = nn.Conv2d(hidden_features * 2, hidden_features * 2, kernel_size=3, stride=1, padding=1,
                                 groups=hidden_features * 2, bias=bias)
 
-        self.project_out = nn.Conv2d(hidden_features, dim, kernel_size=1, bias=bias)
+        self.project_out = nn.Conv2d(
+            hidden_features, dim, kernel_size=1, bias=bias)
 
     def forward(self, x):
         x = self.project_in(x)
@@ -91,7 +93,7 @@ class GFeedForward(nn.Module):
 
 
 ##########################################################################
-## Multi-DConv Head Transposed Self-Attention (MDTA)
+# Multi-DConv Head Transposed Self-Attention (MDTA)
 class Attention(nn.Module):
     def __init__(self, dim, num_heads, bias):
         super(Attention, self).__init__()
@@ -99,7 +101,8 @@ class Attention(nn.Module):
         self.temperature = nn.Parameter(torch.ones(num_heads, 1, 1))
 
         self.qkv = nn.Conv2d(dim, dim * 3, kernel_size=1, bias=bias)
-        self.qkv_dwconv = nn.Conv2d(dim * 3, dim * 3, kernel_size=3, stride=1, padding=1, groups=dim * 3, bias=bias)
+        self.qkv_dwconv = nn.Conv2d(
+            dim * 3, dim * 3, kernel_size=3, stride=1, padding=1, groups=dim * 3, bias=bias)
         self.project_out = nn.Conv2d(dim, dim, kernel_size=1, bias=bias)
 
     def forward(self, x):
@@ -108,9 +111,12 @@ class Attention(nn.Module):
         qkv = self.qkv_dwconv(self.qkv(x))
         q, k, v = qkv.chunk(3, dim=1)
 
-        q = rearrange(q, 'b (head c) h w -> b head c (h w)', head=self.num_heads)
-        k = rearrange(k, 'b (head c) h w -> b head c (h w)', head=self.num_heads)
-        v = rearrange(v, 'b (head c) h w -> b head c (h w)', head=self.num_heads)
+        q = rearrange(q, 'b (head c) h w -> b head c (h w)',
+                      head=self.num_heads)
+        k = rearrange(k, 'b (head c) h w -> b head c (h w)',
+                      head=self.num_heads)
+        v = rearrange(v, 'b (head c) h w -> b head c (h w)',
+                      head=self.num_heads)
 
         q = torch.nn.functional.normalize(q, dim=-1)
         k = torch.nn.functional.normalize(k, dim=-1)
@@ -120,7 +126,8 @@ class Attention(nn.Module):
 
         out = (attn @ v)
 
-        out = rearrange(out, 'b head c (h w) -> b (head c) h w', head=self.num_heads, h=h, w=w)
+        out = rearrange(out, 'b head c (h w) -> b (head c) h w',
+                        head=self.num_heads, h=h, w=w)
 
         out = self.project_out(out)
         return out
@@ -160,8 +167,10 @@ class PAConv(nn.Module):
         super(PAConv, self).__init__()
         self.k2 = nn.Conv2d(nf, nf, 1)  # 1x1 convolution nf->nf
         self.sigmoid = nn.Sigmoid()
-        self.k3 = nn.Conv2d(nf, nf, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False)  # 3x3 convolution
-        self.k4 = nn.Conv2d(nf, nf, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False)  # 3x3 convolution
+        self.k3 = nn.Conv2d(nf, nf, kernel_size=k_size, padding=(
+            k_size - 1) // 2, bias=False)  # 3x3 convolution
+        self.k4 = nn.Conv2d(nf, nf, kernel_size=k_size, padding=(
+            k_size - 1) // 2, bias=False)  # 3x3 convolution
 
     def forward(self, x):
         y = self.k2(x)
@@ -234,7 +243,8 @@ class SCET(nn.Module):
         else:
             num_heads = 8
         self.path1 = nn.Sequential(
-            BackBoneBlock(16, SCPA, nf=planes, reduction=2, stride=1, dilation=1),
+            BackBoneBlock(16, SCPA, nf=planes, reduction=2,
+                          stride=1, dilation=1),
             BackBoneBlock(1, TransformerBlock,
                           dim=planes, num_heads=num_heads, ffn_expansion_factor=2.66, bias=False,
                           LayerNorm_type=WithBias_LayerNorm),
@@ -259,7 +269,6 @@ class SCET(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     # SCET_x4
     net = SCET(upscale=4, planes=64)

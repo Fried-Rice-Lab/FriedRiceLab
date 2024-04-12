@@ -38,7 +38,8 @@ class _BaseModel:
         if self.opt['dist']:
             self.dist_validation(dataloader, current_iter, tb_logger, save_img)
         else:
-            self.nondist_validation(dataloader, current_iter, tb_logger, save_img)
+            self.nondist_validation(
+                dataloader, current_iter, tb_logger, save_img)
 
     def _initialize_best_metric_results(self, dataset_name):
         """Initialize the best metric results dict for recording the best metric value and iteration."""
@@ -72,7 +73,8 @@ class _BaseModel:
         net_g_ema_params = dict(self.net_g_ema.named_parameters())
 
         for k in net_g_ema_params.keys():
-            net_g_ema_params[k].data.mul_(decay).add_(net_g_params[k].data, alpha=1 - decay)
+            net_g_ema_params[k].data.mul_(decay).add_(
+                net_g_params[k].data, alpha=1 - decay)
 
     def get_current_log(self):
         return self.log_dict
@@ -123,7 +125,8 @@ class _BaseModel:
         """
         init_lr_groups_l = []
         for optimizer in self.optimizers:
-            init_lr_groups_l.append([v['initial_lr'] for v in optimizer.param_groups])
+            init_lr_groups_l.append([v['initial_lr']
+                                    for v in optimizer.param_groups])
         return init_lr_groups_l
 
     def update_learning_rate(self, current_iter, warmup_iter=-1):
@@ -145,7 +148,8 @@ class _BaseModel:
             # currently only support linearly warm up
             warm_up_lr_l = []
             for init_lr_g in init_lr_g_l:
-                warm_up_lr_l.append([v / warmup_iter * current_iter for v in init_lr_g])
+                warm_up_lr_l.append(
+                    [v / warmup_iter * current_iter for v in init_lr_g])
             # set learning rate
             self._set_lr(warm_up_lr_l)
 
@@ -232,8 +236,10 @@ class _BaseModel:
         """
         resume_optimizers = resume_state['optimizers']
         resume_schedulers = resume_state['schedulers']
-        assert len(resume_optimizers) == len(self.optimizers), 'Wrong lengths of optimizers'
-        assert len(resume_schedulers) == len(self.schedulers), 'Wrong lengths of schedulers'
+        assert len(resume_optimizers) == len(
+            self.optimizers), 'Wrong lengths of optimizers'
+        assert len(resume_schedulers) == len(
+            self.schedulers), 'Wrong lengths of schedulers'
         for i, o in enumerate(resume_optimizers):
             self.optimizers[i].load_state_dict(o)
         for i, s in enumerate(resume_schedulers):

@@ -1,7 +1,9 @@
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import OptFloat, OptLossClosure, Params
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 
 class Apollo(Optimizer):
@@ -142,8 +144,8 @@ class Apollo(Optimizer):
                 d_p.div_(denom)
                 v_sq = d_p.mul(d_p)
                 delta = (
-                        delta_grad.div_(denom).mul_(d_p).sum().mul(-alpha)
-                        - B.mul(v_sq).sum()
+                    delta_grad.div_(denom).mul_(d_p).sum().mul(-alpha)
+                    - B.mul(v_sq).sum()
                 )
 
                 # Update B

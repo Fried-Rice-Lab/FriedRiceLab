@@ -16,7 +16,8 @@ class Attention(nn.Module):
 
         self.pw = nn.Conv2d(dim, dim, 1)
         self.dw = nn.Conv2d(dim, dim, 5, padding=2, groups=dim)
-        self.dw_d = nn.Conv2d(dim, dim, 5, stride=1, padding=6, groups=dim, dilation=3)
+        self.dw_d = nn.Conv2d(dim, dim, 5, stride=1,
+                              padding=6, groups=dim, dilation=3)
 
     def forward(self, x) -> torch.Tensor:
         u = x.clone()
@@ -76,7 +77,8 @@ def pixelshuffle(in_channels, out_channels) -> nn.Sequential:
 def pixelshuffle_single(in_channels, out_channels, upscale_factor=2) -> nn.Sequential:
     upconv1 = nn.Conv2d(in_channels, 56, 3, 1, 1)
     pixel_shuffle = nn.PixelShuffle(upscale_factor)
-    upconv2 = nn.Conv2d(56, out_channels * upscale_factor * upscale_factor, 3, 1, 1)
+    upconv2 = nn.Conv2d(56, out_channels *
+                        upscale_factor * upscale_factor, 3, 1, 1)
     lrelu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
     return nn.Sequential(*[upconv1, lrelu, upconv2, pixel_shuffle])
 
@@ -117,7 +119,8 @@ class vapsr(nn.Module):
         if upscale == 4:
             self.upsampler = pixelshuffle(dim, num_out_ch)
         else:
-            self.upsampler = pixelshuffle_single(dim, num_out_ch, upscale_factor=upscale)
+            self.upsampler = pixelshuffle_single(
+                dim, num_out_ch, upscale_factor=upscale)
 
     def forward(self, x) -> torch.Tensor:
         x = self.conv_first(x)
@@ -135,7 +138,6 @@ class vapsr(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     # vapSR
     net = vapsr(upscale=4, num_in_ch=3, num_out_ch=3, task='lsr')

@@ -1,8 +1,13 @@
 import math
+
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import Betas2, OptFloat, OptLossClosure, Params, State
+from .types import Betas2
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
+from .types import State
 
 __all__ = ('AdaBound',)
 
@@ -158,9 +163,9 @@ class AdaBound(Optimizer):
                 bias_correction1 = 1 - beta1 ** state['step']
                 bias_correction2 = 1 - beta2 ** state['step']
                 step_size = (
-                        group['lr']
-                        * math.sqrt(bias_correction2)
-                        / bias_correction1
+                    group['lr']
+                    * math.sqrt(bias_correction2)
+                    / bias_correction1
                 )
 
                 # Applies bounds on actual learning rate
@@ -168,10 +173,10 @@ class AdaBound(Optimizer):
                 # to apply lr decay
                 final_lr = group['final_lr'] * group['lr'] / base_lr
                 lower_bound = final_lr * (
-                        1 - 1 / (group['gamma'] * state['step'] + 1)
+                    1 - 1 / (group['gamma'] * state['step'] + 1)
                 )
                 upper_bound = final_lr * (
-                        1 + 1 / (group['gamma'] * state['step'])
+                    1 + 1 / (group['gamma'] * state['step'])
                 )
                 step_size = torch.full_like(denom, step_size)
                 step_size.div_(denom).clamp_(lower_bound, upper_bound).mul_(

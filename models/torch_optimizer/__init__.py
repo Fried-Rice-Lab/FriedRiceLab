@@ -4,7 +4,9 @@
 #
 # Official GitHub: https://github.com/jettify/pytorch-optimizer
 # --------------------------------------------------------------------------------
-from .a2grad import A2GradExp, A2GradInc, A2GradUni
+from .a2grad import A2GradExp
+from .a2grad import A2GradInc
+from .a2grad import A2GradUni
 from .accsgd import AccSGD
 from .adabelief import AdaBelief
 from .adabound import AdaBound

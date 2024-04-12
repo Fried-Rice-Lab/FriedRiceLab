@@ -1,10 +1,14 @@
-from typing import List, Optional
-
 import math
+from typing import List
+from typing import Optional
+
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import Betas2, OptFloat, OptLossClosure, Params
+from .types import Betas2
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 Grads = Params
 
@@ -193,13 +197,13 @@ class Adahessian(Optimizer):
             k = group['hessian_power']
             denom = (
                     (exp_hessian_diag_sq.sqrt() ** k)
-                    / math.sqrt(bias_correction2) ** k
+                / math.sqrt(bias_correction2) ** k
             ).add_(group['eps'])
 
             # make update
             p.data = p.data - group['lr'] * (
-                    exp_avg / bias_correction1 / denom
-                    + group['weight_decay'] * p.data
+                exp_avg / bias_correction1 / denom
+                + group['weight_decay'] * p.data
             )
 
         return loss

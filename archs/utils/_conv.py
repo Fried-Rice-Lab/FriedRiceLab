@@ -53,7 +53,8 @@ class MeanShift(nn.Conv2d):
             # RGB mean for DF2K 1-3450
             rgb_mean = (0.4690, 0.4490, 0.4036)
         else:
-            raise NotImplementedError(f'Unknown data type for MeanShift: {data_type}.')
+            raise NotImplementedError(
+                f'Unknown data type for MeanShift: {data_type}.')
 
         std = torch.Tensor(rgb_std)
         self.weight.data = torch.eye(3).view(3, 3, 1, 1) / std.view(3, 1, 1, 1)
@@ -158,7 +159,8 @@ class CGConv2d(nn.Conv2d):
                                        kernel_size=kernel_size, stride=stride, padding=padding,
                                        dilation=dilation, groups=1, bias=False, **kwargs)  # TODO add bias
 
-        self.latent_size = self.kernel_size[0] * self.kernel_size[1] // 2 + 1  # e
+        self.latent_size = self.kernel_size[0] * \
+            self.kernel_size[1] // 2 + 1  # e
         self.act = act_layer(inplace=True)
         self._act = act_layer(inplace=False)  # TODO: fix it
 
@@ -168,19 +170,22 @@ class CGConv2d(nn.Conv2d):
                                              bias=codec_bias)
 
         """Sub-kernel Generation for wc"""
-        self.in_channels_context_bn = nn.BatchNorm1d(in_channels) if use_bn else nn.Identity()
+        self.in_channels_context_bn = nn.BatchNorm1d(
+            in_channels) if use_bn else nn.Identity()
         self.in_channels_context_decoder = nn.Linear(self.latent_size, self.kernel_size[0] * self.kernel_size[1],
                                                      bias=codec_bias)
 
         """Sub-kernel Generation for wo"""
-        self.pre_out_channels_context_bn = nn.BatchNorm1d(in_channels) if use_bn else nn.Identity()
+        self.pre_out_channels_context_bn = nn.BatchNorm1d(
+            in_channels) if use_bn else nn.Identity()
         if in_channels % linear_groups == 0:
             self.out_channels_context_encoder = GroupLinear(in_channels, out_channels,
                                                             groups=linear_groups, bias=codec_bias)
         else:
             self.out_channels_context_encoder = nn.Linear(in_channels, out_channels,
                                                           bias=codec_bias)
-        self.beh_out_channels_context_bn = nn.BatchNorm1d(out_channels) if use_bn else nn.Identity()
+        self.beh_out_channels_context_bn = nn.BatchNorm1d(
+            out_channels) if use_bn else nn.Identity()
         self.out_channels_context_decoder = nn.Linear(self.latent_size, self.kernel_size[0] * self.kernel_size[1],
                                                       bias=codec_bias)
 
@@ -200,18 +205,22 @@ class CGConv2d(nn.Conv2d):
         global_info = self.global_info_encoder(global_info)  # b c e
 
         """Sub-kernel Generation for wc"""
-        in_channels_context = self.act(self.in_channels_context_bn(global_info))  # b c e
+        in_channels_context = self.act(
+            self.in_channels_context_bn(global_info))  # b c e
         wc = self.in_channels_context_decoder(in_channels_context)  # b c k*k
-        wc = wc.view(b, 1, c, self.kernel_size[0], self.kernel_size[1])  # b 1 c k k
+        # b 1 c k k
+        wc = wc.view(b, 1, c, self.kernel_size[0], self.kernel_size[1])
 
         """Sub-kernel Generation for wo"""
         out_channels_context = self._act(self.pre_out_channels_context_bn(global_info)). \
             permute(0, 2, 1)  # b c e -> b e c
         out_channels_context = self.out_channels_context_encoder(out_channels_context). \
             permute(0, 2, 1)  # b e c -> b e o -> b o e
-        out_channels_context = self.act(self.beh_out_channels_context_bn(out_channels_context))  # b o e
+        out_channels_context = self.act(
+            self.beh_out_channels_context_bn(out_channels_context))  # b o e
         wo = self.out_channels_context_decoder(out_channels_context)  # b o k*k
-        wo = wo.view(b, self.out_channels, 1, self.kernel_size[0], self.kernel_size[1])  # b o 1 k k
+        wo = wo.view(b, self.out_channels, 1,
+                     self.kernel_size[0], self.kernel_size[1])  # b o 1 k k
 
         """Gate Generation"""
         wg = self.sig(wc + wo)  # b o c k k
@@ -219,8 +228,10 @@ class CGConv2d(nn.Conv2d):
         wg = wg.view(b, self.out_channels, -1)  # b o c*k*k
 
         """Conv"""
-        x_patch = f.unfold(x, self.kernel_size, self.dilation, self.padding, self.stride)  # b i*k*k h_*w_
-        output = torch.matmul(wg, x_patch)  # b o c*k*k @ b c*k*k h_*w_ -> b o h_*w_
+        x_patch = f.unfold(x, self.kernel_size, self.dilation,
+                           self.padding, self.stride)  # b i*k*k h_*w_
+        # b o c*k*k @ b c*k*k h_*w_ -> b o h_*w_
+        output = torch.matmul(wg, x_patch)
         output = output.view(b, self.out_channels, h_, w_)  # b o h_ w_
         return output
 
@@ -249,21 +260,31 @@ class ShiftConv2d1x1(nn.Conv2d):
         assert in_channels % 5 == 0, f'{in_channels} % 5 != 0.'
 
         channel_per_group = in_channels // 5
-        self.mask = nn.Parameter(torch.zeros((in_channels, 1, 3, 3)), requires_grad=False)
+        self.mask = nn.Parameter(torch.zeros(
+            (in_channels, 1, 3, 3)), requires_grad=False)
         if shift_mode == '+':
-            self.mask[0 * channel_per_group:1 * channel_per_group, 0, 1, 2] = val
-            self.mask[1 * channel_per_group:2 * channel_per_group, 0, 1, 0] = val
-            self.mask[2 * channel_per_group:3 * channel_per_group, 0, 2, 1] = val
-            self.mask[3 * channel_per_group:4 * channel_per_group, 0, 0, 1] = val
+            self.mask[0 * channel_per_group:1 *
+                      channel_per_group, 0, 1, 2] = val
+            self.mask[1 * channel_per_group:2 *
+                      channel_per_group, 0, 1, 0] = val
+            self.mask[2 * channel_per_group:3 *
+                      channel_per_group, 0, 2, 1] = val
+            self.mask[3 * channel_per_group:4 *
+                      channel_per_group, 0, 0, 1] = val
             self.mask[4 * channel_per_group:, 0, 1, 1] = val
         elif shift_mode == 'x':
-            self.mask[0 * channel_per_group:1 * channel_per_group, 0, 0, 0] = val
-            self.mask[1 * channel_per_group:2 * channel_per_group, 0, 0, 2] = val
-            self.mask[2 * channel_per_group:3 * channel_per_group, 0, 2, 0] = val
-            self.mask[3 * channel_per_group:4 * channel_per_group, 0, 2, 2] = val
+            self.mask[0 * channel_per_group:1 *
+                      channel_per_group, 0, 0, 0] = val
+            self.mask[1 * channel_per_group:2 *
+                      channel_per_group, 0, 0, 2] = val
+            self.mask[2 * channel_per_group:3 *
+                      channel_per_group, 0, 2, 0] = val
+            self.mask[3 * channel_per_group:4 *
+                      channel_per_group, 0, 2, 2] = val
             self.mask[4 * channel_per_group:, 0, 1, 1] = val
         else:
-            raise NotImplementedError(f'Unknown shift mode for ShiftConv2d1x1: {shift_mode}.')
+            raise NotImplementedError(
+                f'Unknown shift mode for ShiftConv2d1x1: {shift_mode}.')
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = f.conv2d(input=x, weight=self.mask, bias=None,

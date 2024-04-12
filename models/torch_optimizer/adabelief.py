@@ -1,8 +1,12 @@
 import math
+
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import Betas2, OptFloat, OptLossClosure, Params
+from .types import Betas2
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
 
 __all__ = ('AdaBelief',)
 
@@ -175,13 +179,13 @@ class AdaBelief(Optimizer):
 
                     # Use the max. for normalizing running avg. of gradient
                     denom = (
-                            max_exp_avg_var.add_(group['eps']).sqrt()
-                            / math.sqrt(bias_correction2)
+                        max_exp_avg_var.add_(group['eps']).sqrt()
+                        / math.sqrt(bias_correction2)
                     ).add_(group['eps'])
                 else:
                     denom = (
-                            exp_avg_var.add_(group['eps']).sqrt()
-                            / math.sqrt(bias_correction2)
+                        exp_avg_var.add_(group['eps']).sqrt()
+                        / math.sqrt(bias_correction2)
                     ).add_(group['eps'])
 
                 if not self._rectify:
@@ -200,12 +204,12 @@ class AdaBelief(Optimizer):
                     ):  # perform Adam style update if variance is small
                         rho_inf, rho_t = state['rho_inf'], state['rho_t']
                         rt = (
-                                (rho_t - 4.0)
-                                * (rho_t - 2.0)
-                                * rho_inf
-                                / (rho_inf - 4.0)
-                                / (rho_inf - 2.0)
-                                / rho_t
+                            (rho_t - 4.0)
+                            * (rho_t - 2.0)
+                            * rho_inf
+                            / (rho_inf - 4.0)
+                            / (rho_inf - 2.0)
+                            / rho_t
                         )
                         rt = math.sqrt(rt)
 

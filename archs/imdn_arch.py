@@ -8,7 +8,10 @@ import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, CCA, Upsampler
+from archs.utils import CCA
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import Upsampler
 
 
 class IMDB(nn.Module):
@@ -30,17 +33,21 @@ class IMDB(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out_c1 = self.act(self.c1(x))
-        distilled_c1, remaining_c1 = torch.split(out_c1, [self.distilled_channels, self.remaining_channels], dim=1)
+        distilled_c1, remaining_c1 = torch.split(
+            out_c1, [self.distilled_channels, self.remaining_channels], dim=1)
 
         out_c2 = self.act(self.c2(remaining_c1))
-        distilled_c2, remaining_c2 = torch.split(out_c2, [self.distilled_channels, self.remaining_channels], dim=1)
+        distilled_c2, remaining_c2 = torch.split(
+            out_c2, [self.distilled_channels, self.remaining_channels], dim=1)
 
         out_c3 = self.act(self.c3(remaining_c2))
-        distilled_c3, remaining_c3 = torch.split(out_c3, [self.distilled_channels, self.remaining_channels], dim=1)
+        distilled_c3, remaining_c3 = torch.split(
+            out_c3, [self.distilled_channels, self.remaining_channels], dim=1)
 
         out_c4 = self.c4(remaining_c3)
 
-        out = torch.cat([distilled_c1, distilled_c2, distilled_c3, out_c4], dim=1)
+        out = torch.cat([distilled_c1, distilled_c2,
+                        distilled_c3, out_c4], dim=1)
 
         return self.c5(self.cca(out)) + x
 
@@ -56,10 +63,12 @@ class IMDN(nn.Module):
 
         self.head = Conv2d3x3(num_in_ch, planes)
 
-        self.body = nn.ModuleList([IMDB(in_channels=planes) for _ in range(num_modules)])
+        self.body = nn.ModuleList([IMDB(in_channels=planes)
+                                  for _ in range(num_modules)])
 
         self.body_tail = nn.Sequential(Conv2d1x1(planes * num_modules, planes),
-                                       nn.LeakyReLU(negative_slope=0.05, inplace=True),
+                                       nn.LeakyReLU(
+                                           negative_slope=0.05, inplace=True),
                                        Conv2d3x3(planes, planes))
 
         self.tail = Upsampler(upscale=upscale, in_channels=planes,
@@ -86,7 +95,6 @@ class IMDN(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = IMDN(upscale=4, planes=64, num_modules=6)
     print(count_parameters(net))

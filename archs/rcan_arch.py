@@ -8,7 +8,9 @@ import torch
 import torch.nn as nn
 from basicsr.utils.registry import ARCH_REGISTRY
 
-from archs.utils import Conv2d1x1, Conv2d3x3, Upsampler
+from archs.utils import Conv2d1x1
+from archs.utils import Conv2d3x3
+from archs.utils import Upsampler
 
 
 class CA(nn.Module):
@@ -95,7 +97,8 @@ class RIR(nn.Module):
     def __init__(self, planes: int, num_groups: int, num_blocks: int) -> None:
         super(RIR, self).__init__()
 
-        self.rir = nn.Sequential(*[RG(planes, num_blocks) for _ in range(num_groups)])
+        self.rir = nn.Sequential(*[RG(planes, num_blocks)
+                                 for _ in range(num_groups)])
         self.conv = Conv2d3x3(planes, planes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

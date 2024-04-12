@@ -1,7 +1,10 @@
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import OptFloat, OptLossClosure, Params, State
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
+from .types import State
 
 __all__ = ('SGDW',)
 

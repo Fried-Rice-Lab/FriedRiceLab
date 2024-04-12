@@ -1,7 +1,11 @@
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import Betas2, OptFloat, OptLossClosure, Params, State
+from .types import Betas2
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
+from .types import State
 
 __all__ = ('SWATS',)
 
@@ -177,7 +181,7 @@ class SWATS(Optimizer):
                 bias_correction1 = 1 - beta1 ** state['step']
                 bias_correction2 = 1 - beta2 ** state['step']
                 step_size = (
-                        group['lr'] * (bias_correction2 ** 0.5) / bias_correction1
+                    group['lr'] * (bias_correction2 ** 0.5) / bias_correction1
                 )
 
                 p = -step_size * (exp_avg / denom)

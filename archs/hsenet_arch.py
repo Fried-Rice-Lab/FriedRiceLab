@@ -49,8 +49,10 @@ class ResBlock(nn.Module):
         m = []
         for i in range(2):
             m.append(conv(n_feat, n_feat, kernel_size, bias=bias))
-            if bn: m.append(nn.BatchNorm2d(n_feat))
-            if i == 0: m.append(act)
+            if bn:
+                m.append(nn.BatchNorm2d(n_feat))
+            if i == 0:
+                m.append(act)
 
         self.body = nn.Sequential(*m)
         self.res_scale = res_scale
@@ -70,13 +72,17 @@ class Upsampler(nn.Sequential):
             for _ in range(int(math.log(scale, 2))):
                 m.append(conv(n_feat, 4 * n_feat, 3, bias))
                 m.append(nn.PixelShuffle(2))
-                if bn: m.append(nn.BatchNorm2d(n_feat))
-                if act: m.append(act())
+                if bn:
+                    m.append(nn.BatchNorm2d(n_feat))
+                if act:
+                    m.append(act())
         elif scale == 3:
             m.append(conv(n_feat, 9 * n_feat, 3, bias))
             m.append(nn.PixelShuffle(3))
-            if bn: m.append(nn.BatchNorm2d(n_feat))
-            if act: m.append(act())
+            if bn:
+                m.append(nn.BatchNorm2d(n_feat))
+            if act:
+                m.append(act())
         else:
             raise NotImplementedError
 
@@ -91,7 +97,8 @@ class DownBlock(nn.Module):
 
     def forward(self, x):
         n, c, h, w = x.size()
-        x = x.view(n, c, h // self.scale, self.scale, w // self.scale, self.scale)
+        x = x.view(n, c, h // self.scale, self.scale,
+                   w // self.scale, self.scale)
         x = x.permute(0, 3, 5, 1, 2, 4).contiguous()
         x = x.view(n, c * (self.scale ** 2), h // self.scale, w // self.scale)
         return x
@@ -197,13 +204,16 @@ class HSEM(nn.Module):
         super(HSEM, self).__init__()
 
         base_scale = []
-        base_scale.append(SSEM(conv, n_feats, kernel_size, bias=bias, bn=bn, act=act))
+        base_scale.append(SSEM(conv, n_feats, kernel_size,
+                          bias=bias, bn=bn, act=act))
 
         down_scale = []
-        down_scale.append(SSEM(conv, n_feats, kernel_size, bias=bias, bn=bn, act=act))
+        down_scale.append(SSEM(conv, n_feats, kernel_size,
+                          bias=bias, bn=bn, act=act))
 
         tail = []
-        tail.append(BasicBlock(conv, n_feats, n_feats, kernel_size, bias=bias, bn=bn, act=act))
+        tail.append(BasicBlock(conv, n_feats, n_feats,
+                    kernel_size, bias=bias, bn=bn, act=act))
 
         self.NonLocal_base = AdjustedNonLocalBlock(n_feats, n_feats // 2)
 
@@ -239,11 +249,14 @@ class SSEM(nn.Module):
         super(SSEM, self).__init__()
 
         head = []
-        head.append(BasicBlock(conv, n_feats, n_feats, kernel_size, bias=bias, bn=bn))
+        head.append(BasicBlock(conv, n_feats, n_feats,
+                    kernel_size, bias=bias, bn=bn))
 
         MB = []  # main branch
-        MB.append(BasicBlock(conv, n_feats, n_feats, kernel_size, bias=bias, bn=bn))
-        MB.append(BasicBlock(conv, n_feats, n_feats, kernel_size, bias=bias, bn=bn))
+        MB.append(BasicBlock(conv, n_feats, n_feats,
+                  kernel_size, bias=bias, bn=bn))
+        MB.append(BasicBlock(conv, n_feats, n_feats,
+                  kernel_size, bias=bias, bn=bn))
 
         AB = []  # attention branch
         AB.append(NonLocalBlock2D(n_feats, n_feats // 2))
@@ -253,7 +266,8 @@ class SSEM(nn.Module):
         sigmoid.append(nn.Sigmoid())
 
         tail = []
-        tail.append(BasicBlock(conv, n_feats, n_feats, kernel_size, bias=bias, bn=bn))
+        tail.append(BasicBlock(conv, n_feats, n_feats,
+                    kernel_size, bias=bias, bn=bn))
 
         self.head = nn.Sequential(*head)
         self.MB = nn.Sequential(*MB)
@@ -281,15 +295,18 @@ class BasicModule(nn.Module):
         super(BasicModule, self).__init__()
 
         head = [
-            BasicBlock(conv, n_feats, n_feats, kernel_size, bias=bias, bn=bn, act=act)
+            BasicBlock(conv, n_feats, n_feats, kernel_size,
+                       bias=bias, bn=bn, act=act)
             for _ in range(2)
         ]
 
         body = []
-        body.append(HSEM(conv, n_feats, kernel_size, bias=bias, bn=bn, act=act))
+        body.append(HSEM(conv, n_feats, kernel_size,
+                    bias=bias, bn=bn, act=act))
 
         tail = [
-            BasicBlock(conv, n_feats, n_feats, kernel_size, bias=bias, bn=bn, act=act)
+            BasicBlock(conv, n_feats, n_feats, kernel_size,
+                       bias=bias, bn=bn, act=act)
             for _ in range(2)
         ]
 
@@ -365,7 +382,6 @@ class HSENet(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = HSENet(upscale=4)
     print(count_parameters(net))

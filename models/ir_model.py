@@ -18,10 +18,14 @@ from basicsr.archs import build_network
 from basicsr.losses import build_loss
 from basicsr.metrics import calculate_metric
 from basicsr.models import lr_scheduler
-from basicsr.utils import get_root_logger, imwrite, tensor2img, img2tensor
+from basicsr.utils import get_root_logger
+from basicsr.utils import img2tensor
+from basicsr.utils import imwrite
+from basicsr.utils import tensor2img
 from basicsr.utils.dist_util import master_only
 from basicsr.utils.registry import MODEL_REGISTRY
-from torch.nn.parallel import DataParallel, DistributedDataParallel
+from torch.nn.parallel import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 from tqdm import tqdm
 
 import archs.utils
@@ -49,7 +53,8 @@ class IRModel(_BaseModel):
         load_path = self.opt['path'].get('pretrain_network_g', None)
         if load_path is not None:
             param_key = self.opt['path'].get('param_key_g', 'params')
-            self.load_network(self.net_g, load_path, self.opt['path'].get('strict_load_g', True), param_key)
+            self.load_network(self.net_g, load_path, self.opt['path'].get(
+                'strict_load_g', True), param_key)
 
         if self.is_train:
             self.init_training_settings()
@@ -67,7 +72,8 @@ class IRModel(_BaseModel):
         """
         net = net.to(self.device)
         if self.opt['dist']:
-            find_unused_parameters = self.opt.get('find_unused_parameters', False)
+            find_unused_parameters = self.opt.get(
+                'find_unused_parameters', False)
             net = DistributedDataParallel(
                 net, device_ids=[torch.cuda.current_device()], find_unused_parameters=find_unused_parameters)
         elif self.opt['num_gpu'] > 1:
@@ -92,7 +98,8 @@ class IRModel(_BaseModel):
         elif optim_type == 'Lamb':
             optimizer = Lamb(params, lr, **kwargs)
         else:
-            raise NotImplementedError(f'optimizer {optim_type} is not supported yet.')
+            raise NotImplementedError(
+                f'optimizer {optim_type} is not supported yet.')
         return optimizer
 
     def setup_schedulers(self):
@@ -101,12 +108,15 @@ class IRModel(_BaseModel):
         scheduler_type = train_opt['scheduler'].pop('type')
         if scheduler_type in ['MultiStepLR', 'MultiStepRestartLR']:
             for optimizer in self.optimizers:
-                self.schedulers.append(lr_scheduler.MultiStepRestartLR(optimizer, **train_opt['scheduler']))
+                self.schedulers.append(lr_scheduler.MultiStepRestartLR(
+                    optimizer, **train_opt['scheduler']))
         elif scheduler_type == 'CosineAnnealingRestartLR':
             for optimizer in self.optimizers:
-                self.schedulers.append(lr_scheduler.CosineAnnealingRestartLR(optimizer, **train_opt['scheduler']))
+                self.schedulers.append(lr_scheduler.CosineAnnealingRestartLR(
+                    optimizer, **train_opt['scheduler']))
         else:
-            raise NotImplementedError(f'Scheduler {scheduler_type} is not implemented yet.')
+            raise NotImplementedError(
+                f'Scheduler {scheduler_type} is not implemented yet.')
 
     def get_bare_model(self, net):
         """Get bare model, especially under wrapping with
@@ -133,7 +143,8 @@ class IRModel(_BaseModel):
         net_params = sum(map(lambda x: x.numel(), net.parameters()))
 
         logger = get_root_logger()
-        logger.info(f'Network: {net_cls_str}, with parameters: {net_params:,d}')
+        logger.info(
+            f'Network: {net_cls_str}, with parameters: {net_params:,d}')
         logger.info(net_str)
 
     @master_only
@@ -154,7 +165,8 @@ class IRModel(_BaseModel):
 
         net = net if isinstance(net, list) else [net]
         param_key = param_key if isinstance(param_key, list) else [param_key]
-        assert len(net) == len(param_key), 'The lengths of net and param_key should be the same.'
+        assert len(net) == len(
+            param_key), 'The lengths of net and param_key should be the same.'
 
         save_dict = {}
         for net_, param_key_ in zip(net, param_key):
@@ -173,7 +185,8 @@ class IRModel(_BaseModel):
                 torch.save(save_dict, save_path)
             except Exception as e:
                 logger = get_root_logger()
-                logger.warning(f'Save model error: {e}, remaining retry times: {retry - 1}')
+                logger.warning(
+                    f'Save model error: {e}, remaining retry times: {retry - 1}')
                 time.sleep(1)
             else:
                 break
@@ -196,13 +209,15 @@ class IRModel(_BaseModel):
         """
         logger = get_root_logger()
         net = self.get_bare_model(net)
-        load_net = torch.load(load_path, map_location=lambda storage, loc: storage)
+        load_net = torch.load(
+            load_path, map_location=lambda storage, loc: storage)
         if param_key is not None:
             if param_key not in load_net and 'params' in load_net:
                 param_key = 'params'
                 logger.info('Loading: params_ema does not exist, use params.')
             load_net = load_net[param_key]
-        logger.info(f'Loading {net.__class__.__name__} model from {load_path}, with param key: [{param_key}].')
+        logger.info(
+            f'Loading {net.__class__.__name__} model from {load_path}, with param key: [{param_key}].')
         # remove unnecessary 'module.'
         for k, v in deepcopy(load_net).items():
             if k.startswith('module.'):
@@ -221,13 +236,15 @@ class IRModel(_BaseModel):
             current_iter (int): Current iteration.
         """
         if current_iter != -1:
-            state = {'epoch': epoch, 'iter': current_iter, 'optimizers': [], 'schedulers': []}
+            state = {'epoch': epoch, 'iter': current_iter,
+                     'optimizers': [], 'schedulers': []}
             for o in self.optimizers:
                 state['optimizers'].append(o.state_dict())
             for s in self.schedulers:
                 state['schedulers'].append(s.state_dict())
             save_filename = f'{current_iter}.state'
-            save_path = os.path.join(self.opt['path']['training_states'], save_filename)
+            save_path = os.path.join(
+                self.opt['path']['training_states'], save_filename)
 
             # avoid occasional writing errors
             retry = 3
@@ -236,14 +253,16 @@ class IRModel(_BaseModel):
                     torch.save(state, save_path)
                 except Exception as e:
                     logger = get_root_logger()
-                    logger.warning(f'Save training state error: {e}, remaining retry times: {retry - 1}')
+                    logger.warning(
+                        f'Save training state error: {e}, remaining retry times: {retry - 1}')
                     time.sleep(1)
                 else:
                     break
                 finally:
                     retry -= 1
             if retry == 0:
-                logger.warning(f'Still cannot save {save_path}. Just ignore it.')
+                logger.warning(
+                    f'Still cannot save {save_path}. Just ignore it.')
                 # raise IOError(f'Cannot save {save_path}.')
 
     def reduce_loss_dict(self, loss_dict):
@@ -284,15 +303,18 @@ class IRModel(_BaseModel):
         self.ema_decay = train_opt.get('ema_decay', 0)
         if self.ema_decay > 0:
             logger = get_root_logger()
-            logger.info(f'Use Exponential Moving Average with decay: {self.ema_decay}')
+            logger.info(
+                f'Use Exponential Moving Average with decay: {self.ema_decay}')
             # define network net_g with Exponential Moving Average (EMA)
             # net_g_ema is used only for testing on one GPU and saving
             # There is no need to wrap with DistributedDataParallel
-            self.net_g_ema = build_network(self.opt['network_g']).to(self.device)
+            self.net_g_ema = build_network(
+                self.opt['network_g']).to(self.device)
             # load pretrained model
             load_path = self.opt['path'].get('pretrain_network_g', None)
             if load_path is not None:
-                self.load_network(self.net_g_ema, load_path, self.opt['path'].get('strict_load_g', True), 'params_ema')
+                self.load_network(self.net_g_ema, load_path, self.opt['path'].get(
+                    'strict_load_g', True), 'params_ema')
             else:
                 self.model_ema(0)  # copy net_g weight
             self.net_g_ema.eval()
@@ -304,7 +326,8 @@ class IRModel(_BaseModel):
             self.cri_pix = None
 
         if train_opt.get('perceptual_opt'):
-            self.cri_perceptual = build_loss(train_opt['perceptual_opt']).to(self.device)
+            self.cri_perceptual = build_loss(
+                train_opt['perceptual_opt']).to(self.device)
         else:
             self.cri_perceptual = None
 
@@ -326,7 +349,8 @@ class IRModel(_BaseModel):
                 logger.warning(f'Params {k} will not be optimized.')
 
         optim_type = train_opt['optim_g'].pop('type')
-        self.optimizer_g = self.get_optimizer(optim_type, optim_params, **train_opt['optim_g'])
+        self.optimizer_g = self.get_optimizer(
+            optim_type, optim_params, **train_opt['optim_g'])
         self.optimizers.append(self.optimizer_g)
 
     def feed_data(self, data):
@@ -384,8 +408,10 @@ class IRModel(_BaseModel):
             )
             if hasattr(self, 'best_metric_results'):
                 log_str += "   [{:<13} @ {}]".format(
-                    "Best: {}".format(round(self.best_metric_results[dataset_name][metric]['val'], 4)),
-                    "iter {}".format(self.best_metric_results[dataset_name][metric]['iter'])
+                    "Best: {}".format(
+                        round(self.best_metric_results[dataset_name][metric]['val'], 4)),
+                    "iter {}".format(
+                        self.best_metric_results[dataset_name][metric]['iter'])
                 )
             log_str += '\n'
 
@@ -393,7 +419,8 @@ class IRModel(_BaseModel):
         logger.info(log_str)
         if tb_logger:
             for metric, value in self.metric_results.items():
-                tb_logger.add_scalar(f'metrics/{dataset_name}/{metric}', value, current_iter)
+                tb_logger.add_scalar(
+                    f'metrics/{dataset_name}/{metric}', value, current_iter)
 
     def get_current_visuals(self):
         out_dict = OrderedDict()
@@ -405,7 +432,8 @@ class IRModel(_BaseModel):
 
     def save(self, epoch, current_iter):
         if hasattr(self, 'net_g_ema'):
-            self.save_network([self.net_g, self.net_g_ema], 'net_g', current_iter, param_key=['params', 'params_ema'])
+            self.save_network([self.net_g, self.net_g_ema], 'net_g',
+                              current_iter, param_key=['params', 'params_ema'])
         else:
             self.save_network(self.net_g, 'net_g', current_iter)
         self.save_training_state(epoch, current_iter)
@@ -463,7 +491,8 @@ class IRModel(_BaseModel):
 
     def dist_validation(self, dataloader, current_iter, tb_logger, save_img):
         if self.opt['rank'] == 0:
-            self.nondist_validation(dataloader, current_iter, tb_logger, save_img)
+            self.nondist_validation(
+                dataloader, current_iter, tb_logger, save_img)
 
     def nondist_validation(self, dataloader, current_iter, tb_logger, save_img):
         dataset_name = dataloader.dataset.opt['name']
@@ -473,7 +502,8 @@ class IRModel(_BaseModel):
 
         if with_metrics:
             if not hasattr(self, 'metric_results'):  # only execute in the first run
-                self.metric_results = {metric: 0 for metric in self.opt['val']['metrics'].keys()}
+                self.metric_results = {
+                    metric: 0 for metric in self.opt['val']['metrics'].keys()}
             # initialize the best metric results for each dataset_name (supporting multiple validation datasets)
             self._initialize_best_metric_results(dataset_name)
         # zero self.metric_results
@@ -498,7 +528,8 @@ class IRModel(_BaseModel):
                     metric_data['img2'] = gt_img
                     del self.gt
             else:
-                temp_img_path = osp.join(self.opt['path']['visualization'], 'temp.png')
+                temp_img_path = osp.join(
+                    self.opt['path']['visualization'], 'temp.png')
                 sr_img = visuals['result'].squeeze(0).detach().cpu(). \
                     clamp(0, 2 ** self.bit - 1.).round().numpy().transpose(1, 2, 0)
                 imageio.imwrite(temp_img_path, sr_img.astype(np.uint8))
@@ -506,7 +537,8 @@ class IRModel(_BaseModel):
                 metric_data['img'] = sr_img
                 if 'gt' in visuals:
                     gt_img = visuals['gt'].squeeze(0).detach().cpu(). \
-                        clamp(0, 2 ** self.bit - 1.).round().numpy().transpose(1, 2, 0)
+                        clamp(0, 2 ** self.bit -
+                              1.).round().numpy().transpose(1, 2, 0)
                     imageio.imwrite(temp_img_path, gt_img.astype(np.uint8))
                     gt_img = tensor2img(img2tensor(cv2.imread(temp_img_path) / (2 ** self.bit - 1.)))  # noqa
                     metric_data['img2'] = gt_img
@@ -536,7 +568,8 @@ class IRModel(_BaseModel):
             if with_metrics:
                 # calculate metrics
                 for name, opt_ in self.opt['val']['metrics'].items():
-                    self.metric_results[name] += calculate_metric(metric_data, opt_)
+                    self.metric_results[name] += calculate_metric(
+                        metric_data, opt_)
             if use_pbar:
                 pbar.update(1)  # noqa
                 pbar.set_description(f'Test {img_name}')
@@ -547,9 +580,11 @@ class IRModel(_BaseModel):
             for metric in self.metric_results.keys():
                 self.metric_results[metric] /= (idx + 1)  # noqa
                 # update the best metric result
-                self._update_best_metric_result(dataset_name, metric, self.metric_results[metric], current_iter)
+                self._update_best_metric_result(
+                    dataset_name, metric, self.metric_results[metric], current_iter)
 
-            self._log_validation_metric_values(current_iter, dataset_name, tb_logger)
+            self._log_validation_metric_values(
+                current_iter, dataset_name, tb_logger)
 
     def nondist_inference(self, dataloader) -> None:
         dataset_name = dataloader.dataset.opt['name']
@@ -563,7 +598,8 @@ class IRModel(_BaseModel):
             if self.bit == 0:
                 sr_img = tensor2img([visuals['result']])
             else:
-                temp_img_path = osp.join(self.opt['path']['visualization'], 'temp.png')
+                temp_img_path = osp.join(
+                    self.opt['path']['visualization'], 'temp.png')
                 sr_img = visuals['result'].squeeze(0).detach().cpu(). \
                     clamp(0, 2 ** self.bit - 1.).round().numpy().transpose(1, 2, 0)
                 imageio.imwrite(temp_img_path, sr_img.astype(np.uint8))
@@ -596,7 +632,8 @@ class IRModel(_BaseModel):
             time_list.append(start.elapsed_time(end))
 
         ave_time = sum(time_list) / len(time_list)
-        gpu_mem = torch.cuda.max_memory_allocated(torch.cuda.current_device()) / 1024 ** 2
+        gpu_mem = torch.cuda.max_memory_allocated(
+            torch.cuda.current_device()) / 1024 ** 2
 
         return ave_time, gpu_mem
 

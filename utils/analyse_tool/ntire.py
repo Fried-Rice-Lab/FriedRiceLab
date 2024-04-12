@@ -1,12 +1,15 @@
-import os.path
-import logging
-import torch
 import argparse
 import json
-
+import logging
+import os.path
 from pprint import pprint
-from utils.analyse_tool.model_summary import get_model_activation, get_model_flops
-from utils.analyse_tool import utils_logger, utils_image as util
+
+import torch
+
+from utils.analyse_tool import utils_image as util
+from utils.analyse_tool import utils_logger
+from utils.analyse_tool.model_summary import get_model_activation
+from utils.analyse_tool.model_summary import get_model_flops
 
 
 def select_model(args, device):
@@ -152,7 +155,7 @@ def select_model(args, device):
         name, data_range = f"{model_id:02}_RFDNFINALB5", 1.0
         model_path = os.path.join('model_zoo', 'team18_bsrn.pth')
         model = BSRN(num_in_ch=3, num_feat=48, num_block=5, num_out_ch=3, upscale=4,
-                            conv='BSConvU', upsampler='pixelshuffledirect')
+                     conv='BSConvU', upsampler='pixelshuffledirect')
         model.load_state_dict(torch.load(model_path)["params"], strict=True)
     elif model_id == 19:
         # Aselsan Research Team
@@ -204,7 +207,8 @@ def select_model(args, device):
         from models.imdn_baseline import IMDN
         name, data_range = f"{model_id:02}_IMDN", 1.0
         model_path = os.path.join('model_zoo', 'team26_imdn_nb7.pth')
-        model = IMDN(in_nc=3, out_nc=3, nc=64, nb=7, upscale=4, act_mode='L', upsample_mode='pixelshuffle')
+        model = IMDN(in_nc=3, out_nc=3, nc=64, nb=7, upscale=4,
+                     act_mode='L', upsample_mode='pixelshuffle')
         model.load_state_dict(torch.load(model_path), strict=True)
     elif model_id == 27:
         # Just Try Team
@@ -261,7 +265,7 @@ def select_model(args, device):
         from models.team34_esan import make_model
         name, data_range = f"{model_id:02}_ESAN", 255.0
         model_path = os.path.join('model_zoo', 'team34_esan.pt')
-        model = make_model(1) #.to(torch.device('cuda'))
+        model = make_model(1)  # .to(torch.device('cuda'))
         model.load_state_dict(torch.load(model_path), strict=True)
     elif model_id == 35:
         # Set5baby Team
@@ -276,7 +280,8 @@ def select_model(args, device):
         name, data_range = f"{model_id:02}_RFESR", 255.0
         model_path = os.path.join('model_zoo', 'team36_rfesr.pt')
         model = RFESR(in_nc=3, nf=32, num_modules=4, out_nc=3, upscale=4)
-        model.load_state_dict(torch.load(model_path, map_location=device), strict=True)
+        model.load_state_dict(torch.load(
+            model_path, map_location=device), strict=True)
     elif model_id == 37:
         # NWPU_SweetDreamLab
         from models.team37_bmdn import BMDN
@@ -290,7 +295,8 @@ def select_model(args, device):
         name, data_range = f"{model_id:02}_RFDN", 1.0
         model_path = "model_zoo/team38_rfdnext.pth"
         model = RFDN(block_type="RFDB", act_type="lrelu")
-        model.load_state_dict(torch.load(model_path)["model_state_dict"], strict=True)
+        model.load_state_dict(torch.load(model_path)[
+                              "model_state_dict"], strict=True)
     elif model_id == 39:
         # rainbow Team
         from models.team39_imdn_plus import IMDN_plus
@@ -319,14 +325,16 @@ def select_model(args, device):
         from models.team43_resdn import ResDN
         name, data_range = f"{model_id:02}_ResDN", 1.0
         model_path = os.path.join('model_zoo', 'team43_resdn.pth')
-        model = ResDN(upscale_factor=4, in_channels=3, n_feats=48, out_channels=3)
+        model = ResDN(upscale_factor=4, in_channels=3,
+                      n_feats=48, out_channels=3)
         model.load_state_dict(torch.load(model_path), strict=True)
     elif model_id == 44:
         # VMCL_Taobao Team
         from models.team44_msdn import MSDN
         name, data_range = f"{model_id:02}_MSDN", 1.0
         model_path = os.path.join('model_zoo', 'team44_msdn.pth')
-        model = MSDN(in_nc=3, nf=56, dist_rate=0.5, num_modules=3, out_nc=3, upscale=4, act_type='silu')
+        model = MSDN(in_nc=3, nf=56, dist_rate=0.5, num_modules=3,
+                     out_nc=3, upscale=4, act_type='silu')
         model.load_state_dict(torch.load(model_path), strict=True)
     else:
         raise NotImplementedError(f"Model {model_id} is not implemented.")
@@ -383,8 +391,10 @@ def forward(img_lq, model, tile=None, tile_overlap=32, scale=4):
                 out_patch = model(in_patch)
                 out_patch_mask = torch.ones_like(out_patch)
 
-                E[..., h_idx*sf:(h_idx+tile)*sf, w_idx*sf:(w_idx+tile)*sf].add_(out_patch)
-                W[..., h_idx*sf:(h_idx+tile)*sf, w_idx*sf:(w_idx+tile)*sf].add_(out_patch_mask)
+                E[..., h_idx*sf:(h_idx+tile)*sf, w_idx *
+                  sf:(w_idx+tile)*sf].add_(out_patch)
+                W[..., h_idx*sf:(h_idx+tile)*sf, w_idx *
+                  sf:(w_idx+tile)*sf].add_(out_patch_mask)
         output = E.div_(W)
 
     return output
@@ -406,7 +416,8 @@ def run(model, model_name, data_range, tile, logger, device, args, mode="test"):
     # dataset path
     # --------------------------------
     data_path = select_dataset(args.data_dir, mode)
-    save_path = os.path.join(args.save_dir, model_name, "test" if mode == "test" else "valid")
+    save_path = os.path.join(args.save_dir, model_name,
+                             "test" if mode == "test" else "valid")
     util.mkdir(save_path)
 
     start = torch.cuda.Event(enable_timing=True)
@@ -429,7 +440,8 @@ def run(model, model_name, data_range, tile, logger, device, args, mode="test"):
         img_sr = forward(img_lr, model, tile)
         end.record()
         torch.cuda.synchronize()
-        results[f"{mode}_runtime"].append(start.elapsed_time(end))  # milliseconds
+        results[f"{mode}_runtime"].append(
+            start.elapsed_time(end))  # milliseconds
         img_sr = util.tensor2uint(img_sr, data_range)
 
         # --------------------------------
@@ -449,7 +461,8 @@ def run(model, model_name, data_range, tile, logger, device, args, mode="test"):
         if args.ssim:
             ssim = util.calculate_ssim(img_sr, img_hr, border=border)
             results[f"{mode}_ssim"].append(ssim)
-            logger.info("{:s} - PSNR: {:.2f} dB; SSIM: {:.4f}.".format(img_name + ext, psnr, ssim))
+            logger.info(
+                "{:s} - PSNR: {:.2f} dB; SSIM: {:.4f}.".format(img_name + ext, psnr, ssim))
         else:
             logger.info("{:s} - PSNR: {:.2f} dB".format(img_name + ext, psnr))
 
@@ -463,22 +476,29 @@ def run(model, model_name, data_range, tile, logger, device, args, mode="test"):
 
         util.imsave(img_sr, os.path.join(save_path, img_name[:4]+ext))
 
-    results[f"{mode}_memory"] = torch.cuda.max_memory_allocated(torch.cuda.current_device()) / 1024 ** 2  # !
-    results[f"{mode}_ave_runtime"] = sum(results[f"{mode}_runtime"]) / len(results[f"{mode}_runtime"])  # !
-    results[f"{mode}_ave_psnr"] = sum(results[f"{mode}_psnr"]) / len(results[f"{mode}_psnr"])
+    results[f"{mode}_memory"] = torch.cuda.max_memory_allocated(
+        torch.cuda.current_device()) / 1024 ** 2  # !
+    results[f"{mode}_ave_runtime"] = sum(
+        results[f"{mode}_runtime"]) / len(results[f"{mode}_runtime"])  # !
+    results[f"{mode}_ave_psnr"] = sum(
+        results[f"{mode}_psnr"]) / len(results[f"{mode}_psnr"])
     if args.ssim:
-        results[f"{mode}_ave_ssim"] = sum(results[f"{mode}_ssim"]) / len(results[f"{mode}_ssim"])
+        results[f"{mode}_ave_ssim"] = sum(
+            results[f"{mode}_ssim"]) / len(results[f"{mode}_ssim"])
     # results[f"{mode}_ave_psnr_y"] = sum(results[f"{mode}_psnr_y"]) / len(results[f"{mode}_psnr_y"])
     # results[f"{mode}_ave_ssim_y"] = sum(results[f"{mode}_ssim_y"]) / len(results[f"{mode}_ssim_y"])
-    logger.info("{:>16s} : {:<.3f} [M]".format("Max Memery", results[f"{mode}_memory"]))  # Memery
-    logger.info("------> Average runtime of ({}) is : {:.6f} seconds".format("test" if mode == "test" else "valid", results[f"{mode}_ave_runtime"]))
+    logger.info("{:>16s} : {:<.3f} [M]".format(
+        "Max Memery", results[f"{mode}_memory"]))  # Memery
+    logger.info("------> Average runtime of ({}) is : {:.6f} seconds".format(
+        "test" if mode == "test" else "valid", results[f"{mode}_ave_runtime"]))
 
     return results
 
 
 def main(args):
 
-    utils_logger.logger_info("NTIRE2022-EfficientSR", log_path="NTIRE2022-EfficientSR.log")
+    utils_logger.logger_info("NTIRE2022-EfficientSR",
+                             log_path="NTIRE2022-EfficientSR.log")
     logger = logging.getLogger("NTIRE2022-EfficientSR")
 
     # --------------------------------
@@ -509,19 +529,22 @@ def main(args):
         # --------------------------------
 
         # inference on the validation set
-        valid_results = run(model, model_name, data_range, tile, logger, device, args, mode="valid")
+        valid_results = run(model, model_name, data_range,
+                            tile, logger, device, args, mode="valid")
         # record PSNR, runtime
         results[model_name] = valid_results
 
         if args.include_test:
             # inference on the test set
-            test_results = run(model, model_name, data_range, tile, logger, device, args, mode="test")
+            test_results = run(model, model_name, data_range,
+                               tile, logger, device, args, mode="test")
             results[model_name].update(test_results)
 
         input_dim = (3, 256, 256)  # set the input dimension
         activations, num_conv = get_model_activation(model, input_dim)  # !
         activations = activations/10**6
-        logger.info("{:>16s} : {:<.4f} [M]".format("#Activations", activations))
+        logger.info("{:>16s} : {:<.4f} [M]".format(
+            "#Activations", activations))
         logger.info("{:>16s} : {:<d}".format("#Conv2d", num_conv))
 
         flops = get_model_flops(model, input_dim, False)  # !
@@ -531,7 +554,8 @@ def main(args):
         num_parameters = sum(map(lambda x: x.numel(), model.parameters()))  # !
         num_parameters = num_parameters/10**6
         logger.info("{:>16s} : {:<.4f} [M]".format("#Params", num_parameters))
-        results[model_name].update({"activations": activations, "num_conv": num_conv, "flops": flops, "num_parameters": num_parameters})
+        results[model_name].update(
+            {"activations": activations, "num_conv": num_conv, "flops": flops, "num_parameters": num_parameters})
 
         with open(json_dir, "w") as f:
             json.dump(results, f)
@@ -541,7 +565,8 @@ def main(args):
                        "Params [M]", "FLOPs [G]", "Acts [M]", "Mem [M]", "Conv")
     else:
         fmt = "{:20s}\t{:10s}\t{:14s}\t{:10s}\t{:10s}\t{:8s}\t{:8s}\t{:8s}\n"
-        s = fmt.format("Model", "Val PSNR", "Val Time [ms]", "Params [M]", "FLOPs [G]", "Acts [M]", "Mem [M]", "Conv")
+        s = fmt.format("Model", "Val PSNR",
+                       "Val Time [ms]", "Params [M]", "FLOPs [G]", "Acts [M]", "Mem [M]", "Conv")
     for k, v in results.items():
         val_psnr = f"{v['valid_ave_psnr']:2.2f}"
         val_time = f"{v['valid_ave_runtime']:3.2f}"
@@ -555,19 +580,24 @@ def main(args):
             test_psnr = f"{v['test_ave_psnr']:2.2f}"
             test_time = f"{v['test_ave_runtime']:3.2f}"
             ave_time = f"{(v['valid_ave_runtime'] + v['test_ave_runtime']) / 2:3.2f}"
-            s += fmt.format(k, val_psnr, test_psnr, val_time, test_time, ave_time, num_param, flops, acts, mem, conv)
+            s += fmt.format(k, val_psnr, test_psnr, val_time, test_time,
+                            ave_time, num_param, flops, acts, mem, conv)
         else:
-            s += fmt.format(k, val_psnr, val_time, num_param, flops, acts, mem, conv)
+            s += fmt.format(k, val_psnr, val_time, num_param,
+                            flops, acts, mem, conv)
     with open(os.path.join(os.getcwd(), 'results.txt'), "w") as f:
         f.write(s)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("NTIRE2022-EfficientSR")
-    parser.add_argument("--data_dir", default="/cluster/work/cvl/yawli/data/NTIRE2022_Challenge", type=str)
-    parser.add_argument("--save_dir", default="/cluster/work/cvl/yawli/data/NTIRE2022_Challenge/results", type=str)
+    parser.add_argument(
+        "--data_dir", default="/cluster/work/cvl/yawli/data/NTIRE2022_Challenge", type=str)
+    parser.add_argument(
+        "--save_dir", default="/cluster/work/cvl/yawli/data/NTIRE2022_Challenge/results", type=str)
     parser.add_argument("--model_id", default=0, type=int)
-    parser.add_argument("--include_test", action="store_true", help="Inference on the DIV2K test set")
+    parser.add_argument("--include_test", action="store_true",
+                        help="Inference on the DIV2K test set")
     parser.add_argument("--ssim", action="store_true", help="Calculate SSIM")
 
     args = parser.parse_args()

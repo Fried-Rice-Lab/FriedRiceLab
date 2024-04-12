@@ -5,15 +5,20 @@ from os import path as osp
 import torch
 import yaml
 from basicsr.utils import set_random_seed
-from basicsr.utils.dist_util import get_dist_info, init_dist
-from basicsr.utils.options import ordered_yaml, _postprocess_yml_value
+from basicsr.utils.dist_util import get_dist_info
+from basicsr.utils.dist_util import init_dist
+from basicsr.utils.options import _postprocess_yml_value
+from basicsr.utils.options import ordered_yaml
 
 
 def parse_options(root_path, is_train=True):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-expe_opt', type=str, required=True, help='Path to experiment YAML file.')
-    parser.add_argument('-task_opt', type=str, required=True, help='Path to task YAML file.')
-    parser.add_argument('--launcher', choices=['none', 'pytorch', 'slurm'], default='none', help='job launcher')
+    parser.add_argument('-expe_opt', type=str, required=True,
+                        help='Path to experiment YAML file.')
+    parser.add_argument('-task_opt', type=str, required=True,
+                        help='Path to task YAML file.')
+    parser.add_argument(
+        '--launcher', choices=['none', 'pytorch', 'slurm'], default='none', help='job launcher')
     parser.add_argument('--auto_resume', action='store_true')
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--local_rank', type=int, default=0)
@@ -99,9 +104,11 @@ def parse_options(root_path, is_train=True):
         experiments_root = osp.join(root_path, 'experiments', opt['name'])
         opt['path']['experiments_root'] = experiments_root
         opt['path']['models'] = osp.join(experiments_root, 'models')
-        opt['path']['training_states'] = osp.join(experiments_root, 'training_states')
+        opt['path']['training_states'] = osp.join(
+            experiments_root, 'training_states')
         opt['path']['log'] = experiments_root
-        opt['path']['visualization'] = osp.join(experiments_root, 'visualization')
+        opt['path']['visualization'] = osp.join(
+            experiments_root, 'visualization')
 
         # change some options for debug mode
         if 'debug' in opt['name']:

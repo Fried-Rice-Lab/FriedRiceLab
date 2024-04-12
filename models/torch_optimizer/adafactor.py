@@ -1,10 +1,15 @@
-from typing import Any, Dict, Tuple
-
 import math
+from typing import Any
+from typing import Dict
+from typing import Tuple
+
 import torch
 from torch.optim.optimizer import Optimizer
 
-from .types import OptFloat, OptLossClosure, Params, State
+from .types import OptFloat
+from .types import OptLossClosure
+from .types import Params
+from .types import State
 
 Eps2 = Tuple[float, float]
 ParamGroup = Dict[str, Any]

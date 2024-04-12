@@ -89,19 +89,22 @@ class PatchEmbed(nn.Module):
         super().__init__()
         img_size = tuple((img_size, img_size))
         patch_size = tuple((patch_size, patch_size))
-        num_patches = (img_size[1] // patch_size[1]) * (img_size[0] // patch_size[0])
+        num_patches = (img_size[1] // patch_size[1]) * \
+            (img_size[0] // patch_size[0])
         self.img_size = img_size
         self.patch_size = patch_size
         self.num_patches = num_patches
 
-        self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
+        self.proj = nn.Conv2d(in_chans, embed_dim,
+                              kernel_size=patch_size, stride=patch_size)
 
     def forward(self, x):
         B, C, H, W = x.shape  # 16*64*48*48
         # FIXME look at relaxing size constraints
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
-        x = self.proj(x).flatten(2).transpose(1, 2)  # 64*48*48->768*6*6->768*36->36*768
+        # 64*48*48->768*6*6->768*36->36*768
+        x = self.proj(x).flatten(2).transpose(1, 2)
         return x
 
 
@@ -141,7 +144,8 @@ class EffAttention(nn.Module):
         x = self.reduce(x)
         B, N, C = x.shape
 
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C //
+                                  self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
 
         q_all = torch.split(q, math.ceil(N // 4), dim=-2)
@@ -170,9 +174,11 @@ class MLABlock(nn.Module):
             drop_path=0., act_layer=nn.ReLU, norm_layer=nn.LayerNorm):
         super(MLABlock, self).__init__()
         self.dim = dim
-        self.atten = EffAttention(self.dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.)
+        self.atten = EffAttention(
+            self.dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.)
         self.norm1 = nn.LayerNorm(self.dim)
-        self.mlp = Mlp(in_features=dim, hidden_features=dim // 4, act_layer=act_layer, drop=drop)
+        self.mlp = Mlp(in_features=dim, hidden_features=dim //
+                       4, act_layer=act_layer, drop=drop)
         self.norm2 = nn.LayerNorm(self.dim)
 
     def forward(self, x):
@@ -202,14 +208,16 @@ def activation(act_type, inplace=True, neg_slope=0.05, n_prelu=1):
     elif act_type == 'prelu':
         layer = nn.PReLU(num_parameters=n_prelu, init=neg_slope)
     else:
-        raise NotImplementedError('activation layer [{:s}] is not found'.format(act_type))
+        raise NotImplementedError(
+            'activation layer [{:s}] is not found'.format(act_type))
     return layer
 
 
 def sequential(*args):
     if len(args) == 1:
         if isinstance(args[0], OrderedDict):
-            raise NotImplementedError('sequential does not support OrderedDict input.')
+            raise NotImplementedError(
+                'sequential does not support OrderedDict input.')
         return args[0]
     modules = []
     for module in args:
@@ -245,7 +253,8 @@ class Upsampler(nn.Sequential):
             for _ in range(int(math.log(scale, 2))):
                 m.append(conv(n_feats, 4 * n_feats, 3, bias))
                 m.append(nn.PixelShuffle(2))
-                if bn: m.append(nn.BatchNorm2d(n_feats))
+                if bn:
+                    m.append(nn.BatchNorm2d(n_feats))
 
                 if act == 'relu':
                     m.append(nn.ReLU(True))
@@ -255,7 +264,8 @@ class Upsampler(nn.Sequential):
         elif scale == 3:
             m.append(conv(n_feats, 9 * n_feats, 3, bias))
             m.append(nn.PixelShuffle(3))
-            if bn: m.append(nn.BatchNorm2d(n_feats))
+            if bn:
+                m.append(nn.BatchNorm2d(n_feats))
 
             if act == 'relu':
                 m.append(nn.ReLU(True))
@@ -290,9 +300,11 @@ class CALayer(nn.Module):
 class one_conv(nn.Module):
     def __init__(self, inchanels, growth_rate, kernel_size=3, relu=True):
         super(one_conv, self).__init__()
-        self.conv = nn.Conv2d(inchanels, growth_rate, kernel_size=kernel_size, padding=kernel_size >> 1, stride=1)
+        self.conv = nn.Conv2d(
+            inchanels, growth_rate, kernel_size=kernel_size, padding=kernel_size >> 1, stride=1)
         self.flag = relu
-        self.conv1 = nn.Conv2d(growth_rate, inchanels, kernel_size=kernel_size, padding=kernel_size >> 1, stride=1)
+        self.conv1 = nn.Conv2d(
+            growth_rate, inchanels, kernel_size=kernel_size, padding=kernel_size >> 1, stride=1)
         if relu:
             self.relu = nn.PReLU(growth_rate)
         self.weight1 = Scale(1)
@@ -302,7 +314,8 @@ class one_conv(nn.Module):
         if self.flag == False:
             output = self.weight1(x) + self.weight2(self.conv1(self.conv(x)))
         else:
-            output = self.weight1(x) + self.weight2(self.conv1(self.relu(self.conv(x))))
+            output = self.weight1(
+                x) + self.weight2(self.conv1(self.relu(self.conv(x))))
         return output
 
 
@@ -319,10 +332,12 @@ class BasicConv(nn.Module):
         else:
             self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=padding,
                                   dilation=dilation, groups=groups, bias=bias)
-        self.bn = nn.BatchNorm2d(out_planes, eps=1e-5, momentum=0.01, affine=True) if bn else None
+        self.bn = nn.BatchNorm2d(out_planes, eps=1e-5,
+                                 momentum=0.01, affine=True) if bn else None
         self.relu = nn.ReLU(inplace=True) if relu else None
         self.up_size = up_size
-        self.up_sample = nn.Upsample(size=(up_size, up_size), mode='bilinear') if up_size != 0 else None
+        self.up_sample = nn.Upsample(
+            size=(up_size, up_size), mode='bilinear') if up_size != 0 else None
 
     def forward(self, x):
         x = self.conv(x)
@@ -352,7 +367,8 @@ class one_module(nn.Module):
     def forward(self, x):
         x1 = self.layer1(x)
         x2 = self.layer2(x1)
-        x4 = self.layer4(self.atten(self.alise(torch.cat([self.weight2(x2), self.weight3(x1)], 1))))
+        x4 = self.layer4(self.atten(self.alise(
+            torch.cat([self.weight2(x2), self.weight3(x1)], 1))))
         return self.weight4(x) + self.weight5(x4)
 
 
@@ -370,12 +386,14 @@ class Updownblock(nn.Module):
     def forward(self, x):
         x1 = self.encoder(x)
         x2 = self.down(x1)
-        high = x1 - F.interpolate(x2, size=x.size()[-2:], mode='bilinear', align_corners=True)
+        high = x1 - F.interpolate(x2, size=x.size()
+                                  [-2:], mode='bilinear', align_corners=True)
         for i in range(5):
             x2 = self.decoder_low(x2)
         x3 = x2
         high1 = self.decoder_high(high)
-        x4 = F.interpolate(x3, size=x.size()[-2:], mode='bilinear', align_corners=True)
+        x4 = F.interpolate(
+            x3, size=x.size()[-2:], mode='bilinear', align_corners=True)
         return self.alise(self.att(self.alise2(torch.cat([x4, high1], dim=1)))) + x
 
 
@@ -409,7 +427,7 @@ class ESRT(nn.Module):
     def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
                  conv=default_conv):
         super(ESRT, self).__init__()
-        wn = lambda x: torch.nn.utils.weight_norm(x)
+        def wn(x): return torch.nn.utils.weight_norm(x)
         n_feats = 32
         n_blocks = 1
         kernel_size = 3
@@ -455,7 +473,6 @@ class ESRT(nn.Module):
 if __name__ == '__main__':
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 
     net = ESRT(upscale=4)
     print(count_parameters(net))
