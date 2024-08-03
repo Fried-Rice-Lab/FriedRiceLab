@@ -28,8 +28,13 @@ class MLP4D(nn.Module):
 
     """
 
-    def __init__(self, in_features: int, hidden_features: int = None,
-                 out_features: int = None, act_layer: nn.Module = nn.GELU) -> None:
+    def __init__(
+        self,
+        in_features: int,
+        hidden_features: int | None = None,
+        out_features: int | None = None,
+        act_layer: nn.Module = nn.GELU,
+    ) -> None:
         super().__init__()
         hidden_features = hidden_features or in_features
         out_features = out_features or in_features
@@ -49,54 +54,87 @@ class MLP4D(nn.Module):
 
 
 class TransformerGroup(_TransformerGroup):
-    def __init__(self, n_t: int, dim: int, num_heads: int,
-                 window_list: tuple = ((24, 6), (6, 24)), shift_list: tuple = ((12, 3), (3, 12)),
-                 mlp_ratio: int = 2, act_layer: nn.Module = nn.GELU,
-                 return_attns: bool = False) -> None:
-        sa_list = [SABase4D(dim=dim,
-                            num_heads=num_heads,
-                            attn_layer=[Conv2d1x1(dim, dim * 2),
-                                        nn.BatchNorm2d(dim * 2)],
-                            proj_layer=[Conv2d1x1(dim, dim)],
-                            window_list=window_list,
-                            shift_list=shift_list if (
-                                i + 1) % 2 == 0 else None,
-                            return_attns=return_attns)
-                   for i in range(n_t)]
+    def __init__(
+        self,
+        n_t: int,
+        dim: int,
+        num_heads: int,
+        window_list: tuple = ((24, 6), (6, 24)),
+        shift_list: tuple = ((12, 3), (3, 12)),
+        mlp_ratio: int = 2,
+        act_layer: nn.Module = nn.GELU,
+        return_attns: bool = False,
+    ) -> None:
+        sa_list = [
+            SABase4D(
+                dim=dim,
+                num_heads=num_heads,
+                attn_layer=[Conv2d1x1(dim, dim * 2), nn.BatchNorm2d(dim * 2)],
+                proj_layer=[Conv2d1x1(dim, dim)],
+                window_list=window_list,
+                shift_list=shift_list if (i + 1) % 2 == 0 else None,
+                return_attns=return_attns,
+            )
+            for i in range(n_t)
+        ]
 
-        mlp_list = [MLP4D(dim, dim * mlp_ratio, act_layer=act_layer)
-                    for _ in range(n_t)]
+        mlp_list = [
+            MLP4D(dim, dim * mlp_ratio, act_layer=act_layer) for _ in range(n_t)
+        ]
 
         conv_list = [Conv2d3x3(in_channels=dim, out_channels=dim)]
 
-        super(TransformerGroup, self). \
-            __init__(sa_list=sa_list, mlp_list=mlp_list, conv_list=conv_list)
+        super(TransformerGroup, self).__init__(
+            sa_list=sa_list, mlp_list=mlp_list, conv_list=conv_list
+        )
 
 
 @ARCH_REGISTRY.register()
 class ESWT(nn.Module):
-    r"""Image Super-Resolution using Efficient Striped Window Transformer
-    """
+    r"""Image Super-Resolution using Efficient Striped Window Transformer"""
 
-    def __init__(self, upscale: int, num_in_ch: int, num_out_ch: int, task: str,
-                 n_t: int, n_g: int, dim: int, num_heads: int = 1,
-                 window_list: tuple = ((24, 6), (6, 24)),
-                 shift_list: tuple = ((12, 3), (3, 12)),
-                 return_attns: bool = False) -> None:
+    def __init__(
+        self,
+        upscale: int,
+        num_in_ch: int,
+        num_out_ch: int,
+        task: str,
+        n_t: int,
+        n_g: int,
+        dim: int,
+        num_heads: int = 1,
+        window_list: tuple = ((24, 6), (6, 24)),
+        shift_list: tuple = ((12, 3), (3, 12)),
+        return_attns: bool = False,
+    ) -> None:
         super(ESWT, self).__init__()
 
-        self.sub_mean = MeanShift(255, sign=-1, data_type='DF2K')
-        self.add_mean = MeanShift(255, sign=1, data_type='DF2K')
+        self.sub_mean = MeanShift(255, sign=-1, data_type="DF2K")
+        self.add_mean = MeanShift(255, sign=1, data_type="DF2K")
 
         self.head = nn.Sequential(Conv2d3x3(num_in_ch, dim))
 
-        self.body = nn.Sequential(*[TransformerGroup(n_t=n_t, dim=dim, num_heads=num_heads,
-                                                     window_list=window_list, shift_list=shift_list,
-                                                     act_layer=Swish, return_attns=return_attns)  # noqa
-                                    for _ in range(n_g)])
+        self.body = nn.Sequential(
+            *[
+                TransformerGroup(
+                    n_t=n_t,
+                    dim=dim,
+                    num_heads=num_heads,
+                    window_list=window_list,
+                    shift_list=shift_list,
+                    act_layer=Swish,
+                    return_attns=return_attns,
+                )  # noqa
+                for _ in range(n_g)
+            ]
+        )
 
-        self.tail = Upsampler(upscale=upscale, in_channels=dim,
-                              out_channels=num_out_ch, upsample_mode=task)
+        self.tail = Upsampler(
+            upscale=upscale,
+            in_channels=dim,
+            out_channels=num_out_ch,
+            upsample_mode=task,
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # reduce the mean of pixels
@@ -118,7 +156,8 @@ class ESWT(nn.Module):
         return add_x
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 

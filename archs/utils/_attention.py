@@ -13,9 +13,16 @@ from einops import rearrange
 from ._conv import Conv2d1x1
 from ._conv import Conv2d3x3
 
-__all__ = ['ChannelAttention', 'SpatialAttention', 'PixelAttention',
-           'SABase4D', 'CrissCrossAttention',
-           'CBAM', 'CCA', 'ESA']
+__all__ = [
+    "ChannelAttention",
+    "SpatialAttention",
+    "PixelAttention",
+    "SABase4D",
+    "CrissCrossAttention",
+    "CBAM",
+    "CCA",
+    "ESA",
+]
 
 
 class ChannelAttention(nn.Module):
@@ -28,7 +35,9 @@ class ChannelAttention(nn.Module):
 
     """
 
-    def __init__(self, planes: int, reduction: int = 8, act_layer: nn.Module = nn.ReLU) -> None:
+    def __init__(
+        self, planes: int, reduction: int = 8, act_layer: nn.Module = nn.ReLU
+    ) -> None:
         super(ChannelAttention, self).__init__()
 
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
@@ -36,7 +45,7 @@ class ChannelAttention(nn.Module):
         self.shared_MLP = nn.Sequential(
             Conv2d3x3(planes, planes // reduction, bias=False),
             act_layer(inplace=True),
-            Conv2d3x3(planes // reduction, planes, bias=False)
+            Conv2d3x3(planes // reduction, planes, bias=False),
         )
         self.sigmoid = nn.Sigmoid()
 
@@ -48,8 +57,7 @@ class ChannelAttention(nn.Module):
 
 
 class SpatialAttention(nn.Module):
-    r"""
-    """
+    r""" """
 
     def __init__(self) -> None:
         super(SpatialAttention, self).__init__()
@@ -99,14 +107,16 @@ class SABase4D(nn.Module):
         b c h w -> b c h w
     """
 
-    def __init__(self, dim: int,
-                 num_heads: int,
-                 attn_layer: list = None,
-                 proj_layer: list = None,
-                 window_list: tuple = ((8, 8),),
-                 shift_list: tuple = None,
-                 return_attns: bool = False,
-                 ) -> None:
+    def __init__(
+        self,
+        dim: int,
+        num_heads: int,
+        attn_layer: list | None = None,
+        proj_layer: list | None = None,
+        window_list: tuple = ((8, 8),),
+        shift_list: tuple | None = None,
+        return_attns: bool = False,
+    ) -> None:
         super(SABase4D, self).__init__()
 
         self.dim = dim
@@ -121,9 +131,11 @@ class SABase4D(nn.Module):
             self.shift_list = ((0, 0),) * len(window_list)
 
         self.attn = nn.Sequential(
-            *attn_layer if attn_layer is not None else [nn.Identity()])
+            *attn_layer if attn_layer is not None else [nn.Identity()]
+        )
         self.proj = nn.Sequential(
-            *proj_layer if proj_layer is not None else [nn.Identity()])
+            *proj_layer if proj_layer is not None else [nn.Identity()]
+        )
 
     @staticmethod
     def check_image_size(x: torch.Tensor, window_size: tuple) -> torch.Tensor:
@@ -132,7 +144,7 @@ class SABase4D(nn.Module):
         windows_num_w = math.ceil(w / window_size[1])
         mod_pad_h = windows_num_h * window_size[0] - h
         mod_pad_w = windows_num_w * window_size[1] - w
-        return f.pad(x, (0, mod_pad_w, 0, mod_pad_h), 'reflect')
+        return f.pad(x, (0, mod_pad_w, 0, mod_pad_h), "reflect")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor or tuple:
         r"""
@@ -148,41 +160,59 @@ class SABase4D(nn.Module):
 
         # split channels
         qkv_list = torch.split(
-            qkv, [C // len(self.window_list)] * len(self.window_list), dim=1)
+            qkv, [C // len(self.window_list)] * len(self.window_list), dim=1
+        )
 
         output_list = list()
         if self.return_attns:
             attn_list = list()
 
-        for attn_slice, window_size, shift_size in zip(qkv_list, self.window_list, self.shift_list):
+        for attn_slice, window_size, shift_size in zip(
+            qkv_list, self.window_list, self.shift_list
+        ):
             _, _, h, w = attn_slice.size()
             attn_slice = self.check_image_size(attn_slice, window_size)
 
             # roooll!
             if shift_size != (0, 0):
-                attn_slice = torch.roll(
-                    attn_slice, shifts=shift_size, dims=(2, 3))
+                attn_slice = torch.roll(attn_slice, shifts=shift_size, dims=(2, 3))
 
             # cal attn
             _, _, H, W = attn_slice.size()
-            q, v = rearrange(attn_slice, 'b (qv head c) (nh ws1) (nw ws2) -> qv (b head nh nw) (ws1 ws2) c',
-                             qv=2, head=self.num_heads,
-                             ws1=window_size[0], ws2=window_size[1])
-            attn = (q @ q.transpose(-2, -1))
+            q, v = rearrange(
+                attn_slice,
+                "b (qv head c) (nh ws1) (nw ws2) -> qv (b head nh nw) (ws1 ws2) c",
+                qv=2,
+                head=self.num_heads,
+                ws1=window_size[0],
+                ws2=window_size[1],
+            )
+            attn = q @ q.transpose(-2, -1)
             attn = f.softmax(attn, dim=-1)
             if self.return_attns:
-                attn_list.append(attn.reshape(self.num_heads, -1,
-                                              window_size[0] * window_size[1],
-                                              window_size[0] * window_size[1]))  # noqa
-            output = rearrange(attn @ v, '(b head nh nw) (ws1 ws2) c -> b (head c) (nh ws1) (nw ws2)',
-                               head=self.num_heads,
-                               nh=H // window_size[0], nw=W // window_size[1],
-                               ws1=window_size[0], ws2=window_size[1])
+                attn_list.append(
+                    attn.reshape(
+                        self.num_heads,
+                        -1,
+                        window_size[0] * window_size[1],
+                        window_size[0] * window_size[1],
+                    )
+                )  # noqa
+            output = rearrange(
+                attn @ v,
+                "(b head nh nw) (ws1 ws2) c -> b (head c) (nh ws1) (nw ws2)",
+                head=self.num_heads,
+                nh=H // window_size[0],
+                nw=W // window_size[1],
+                ws1=window_size[0],
+                ws2=window_size[1],
+            )
 
             # roooll back!
             if shift_size != (0, 0):
                 output = torch.roll(
-                    output, shifts=(-shift_size[0], -shift_size[1]), dims=(2, 3))
+                    output, shifts=(-shift_size[0], -shift_size[1]), dims=(2, 3)
+                )
 
             output_list.append(output[:, :, :h, :w])
 
@@ -207,63 +237,83 @@ class CrissCrossAttention(nn.Module):
     def __init__(self, planes: int, reduction: int = 8) -> None:
         super(CrissCrossAttention, self).__init__()
 
-        self.q = Conv2d1x1(in_channels=planes,
-                           out_channels=planes // reduction)
-        self.k = Conv2d1x1(in_channels=planes,
-                           out_channels=planes // reduction)
+        self.q = Conv2d1x1(in_channels=planes, out_channels=planes // reduction)
+        self.k = Conv2d1x1(in_channels=planes, out_channels=planes // reduction)
         self.v = Conv2d1x1(in_channels=planes, out_channels=planes)
 
         self.gamma = nn.Parameter(torch.zeros(1))
 
     @staticmethod
     def inf(b: int, h: int, w: int, device) -> torch.Tensor:
-        return -torch.diag(torch.tensor(float("inf")).to(device).repeat(h), 0).unsqueeze(0).repeat(b * w, 1, 1)
+        return (
+            -torch.diag(torch.tensor(float("inf")).to(device).repeat(h), 0)
+            .unsqueeze(0)
+            .repeat(b * w, 1, 1)
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         b, _, h, w = x.size()
 
         proj_query = self.q(x)  # b c h w -> b c/8 h w
-        proj_query_h = proj_query.permute(0, 3, 1, 2). \
-            contiguous().view(b * w, -1, h).permute(0, 2,
-                                                    1)  # b c/8 h w -> b w c/8 h -> b*w c/8 h -> b*w h c/8
-        proj_query_w = proj_query.permute(0, 2, 1, 3). \
-            contiguous().view(b * h, -1, w).permute(0, 2,
-                                                    1)  # b c/8 h w -> b h c/8 w -> b*h c/8 w -> b*h w c/8
+        proj_query_h = (
+            proj_query.permute(0, 3, 1, 2)
+            .contiguous()
+            .view(b * w, -1, h)
+            .permute(0, 2, 1)
+        )  # b c/8 h w -> b w c/8 h -> b*w c/8 h -> b*w h c/8
+        proj_query_w = (
+            proj_query.permute(0, 2, 1, 3)
+            .contiguous()
+            .view(b * h, -1, w)
+            .permute(0, 2, 1)
+        )  # b c/8 h w -> b h c/8 w -> b*h c/8 w -> b*h w c/8
 
         proj_key = self.k(x)  # b c h w -> b c/8 h w
-        proj_key_h = proj_key.permute(0, 3, 1, 2). \
-            contiguous().view(b * w, -1, h)  # b c/8 h w -> b w c/8 h -> b*w c/8 h
-        proj_key_w = proj_key.permute(0, 2, 1, 3). \
-            contiguous().view(b * h, -1, w)  # b c/8 h w -> b h c/8 w -> b*h c/8 w
+        proj_key_h = (
+            proj_key.permute(0, 3, 1, 2).contiguous().view(b * w, -1, h)
+        )  # b c/8 h w -> b w c/8 h -> b*w c/8 h
+        proj_key_w = (
+            proj_key.permute(0, 2, 1, 3).contiguous().view(b * h, -1, w)
+        )  # b c/8 h w -> b h c/8 w -> b*h c/8 w
 
         proj_value = self.v(x)  # b c h w -> b c h w
-        proj_value_h = proj_value.permute(0, 3, 1, 2). \
-            contiguous().view(b * w, -1, h)  # b c h w -> b w c h -> b*w c h
-        proj_value_w = proj_value.permute(0, 2, 1, 3). \
-            contiguous().view(b * h, -1, w)  # b c h w -> b h c w -> b*h c w
+        proj_value_h = (
+            proj_value.permute(0, 3, 1, 2).contiguous().view(b * w, -1, h)
+        )  # b c h w -> b w c h -> b*w c h
+        proj_value_w = (
+            proj_value.permute(0, 2, 1, 3).contiguous().view(b * h, -1, w)
+        )  # b c h w -> b h c w -> b*h c w
 
         # b*w h c/8 @ b*w c/8 h -> b*w h h
         energy_h = torch.bmm(proj_query_h, proj_key_h)
         # b*w h h + b*w h h -> b*w h h
         energy_h = energy_h + self.inf(b, h, w, x.device)
         energy_h = energy_h.view(b, w, h, h).permute(
-            0, 2, 1, 3)  # b*w h h -> b w h h -> b h w h
+            0, 2, 1, 3
+        )  # b*w h h -> b w h h -> b h w h
 
         energy_w = torch.bmm(proj_query_w, proj_key_w).view(
-            b, h, w, w)  # b*h w c/8 @ b*h c/8 w -> b*h w w -> b h w w
+            b, h, w, w
+        )  # b*h w c/8 @ b*h c/8 w -> b*h w w -> b h w w
 
         # b h w h + b h w w -> b h w (h + w)
         concate = f.softmax(torch.cat([energy_h, energy_w], 3), dim=3)
 
-        att_h = concate[:, :, :, 0:h].permute(
-            0, 2, 1, 3).contiguous().view(b * w, h, h)  # b*w h h
-        att_w = concate[:, :, :, h:h + w].contiguous().view(b * h,
-                                                            w, w)  # b*h w w
+        att_h = (
+            concate[:, :, :, 0:h].permute(0, 2, 1, 3).contiguous().view(b * w, h, h)
+        )  # b*w h h
+        att_w = concate[:, :, :, h : h + w].contiguous().view(b * h, w, w)  # b*h w w
 
-        out_h = torch.bmm(proj_value_h, att_h.permute(
-            0, 2, 1)).view(b, w, -1, h).permute(0, 2, 3, 1)
-        out_w = torch.bmm(proj_value_w, att_w.permute(
-            0, 2, 1)).view(b, h, -1, w).permute(0, 2, 1, 3)
+        out_h = (
+            torch.bmm(proj_value_h, att_h.permute(0, 2, 1))
+            .view(b, w, -1, h)
+            .permute(0, 2, 3, 1)
+        )
+        out_w = (
+            torch.bmm(proj_value_w, att_w.permute(0, 2, 1))
+            .view(b, h, -1, w)
+            .permute(0, 2, 1, 3)
+        )
 
         return self.gamma * (out_h + out_w) + x
 
@@ -278,7 +328,9 @@ class CBAM(nn.Module):
 
     """
 
-    def __init__(self, planes: int, reduction: int = 8, act_layer: nn.Module = nn.ReLU) -> None:
+    def __init__(
+        self, planes: int, reduction: int = 8, act_layer: nn.Module = nn.ReLU
+    ) -> None:
         super(CBAM, self).__init__()
 
         self.ca = ChannelAttention(planes, reduction, act_layer)
@@ -289,24 +341,25 @@ class CBAM(nn.Module):
 
 
 class CCA(nn.Module):
-    r"""Contrast-aware Channel Attention.
-    """
+    r"""Contrast-aware Channel Attention."""
 
     def __init__(self, planes: int, reduction: int = 16) -> None:
         super(CCA, self).__init__()
 
-        self.conv = nn.Sequential(Conv2d1x1(planes, planes // reduction),
-                                  nn.ReLU(inplace=True),
-                                  Conv2d1x1(planes // reduction, planes))
+        self.conv = nn.Sequential(
+            Conv2d1x1(planes, planes // reduction),
+            nn.ReLU(inplace=True),
+            Conv2d1x1(planes // reduction, planes),
+        )
         self.sig = nn.Sigmoid()
 
     @staticmethod
     def contrast(x: torch.Tensor) -> torch.Tensor:
         # cal stdv
-        mean = x.sum(3, keepdim=True).sum(
-            2, keepdim=True) / (x.size(2) * x.size(3))
-        var = (x - mean).pow(2).sum(3, keepdim=True).sum(2,
-                                                         keepdim=True) / (x.size(2) * x.size(3))
+        mean = x.sum(3, keepdim=True).sum(2, keepdim=True) / (x.size(2) * x.size(3))
+        var = (x - mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (
+            x.size(2) * x.size(3)
+        )
         stdv = var.pow(0.5)
         # cal pool
         pool = f.adaptive_avg_pool2d(x, 1)
@@ -353,19 +406,20 @@ class ESA(nn.Module):
         # Conv Group
         group_output = self.group_conv(pool_output)
         # Upsampling
-        upsample_output = f.interpolate(group_output, (x.size(2), x.size(3)),
-                                        mode='bilinear', align_corners=False)
+        upsample_output = f.interpolate(
+            group_output, (x.size(2), x.size(3)), mode="bilinear", align_corners=False
+        )
 
         # Conv-1
-        tail_output = self.tail_conv(
-            upsample_output + self.useless_conv(head_output))
+        tail_output = self.tail_conv(upsample_output + self.useless_conv(head_output))
         # Sigmoid
         sig_output = torch.sigmoid(tail_output)
 
         return x * sig_output
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+
     def count_parameters(model):
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
